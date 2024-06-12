@@ -6,6 +6,7 @@ import math
 import torch
 import torch.nn.functional as F
 from torch import nn
+from hook import HookManager
 from einops import rearrange
 try:
     from apex.normalization import FusedLayerNorm as LayerNorm
@@ -15,8 +16,8 @@ except ModuleNotFoundError:
 from .multiway_network import MultiwayWrapper
 from .xpos_relative_position import XPOS
 from .flash_attention import flash_attn_func
-
-
+from typing import Optional
+from hook import HookManager
 class MultiheadAttention(nn.Module):
     def __init__(
         self,
@@ -27,8 +28,11 @@ class MultiheadAttention(nn.Module):
         self_attention=False,
         encoder_decoder_attention=False,
         subln=False,
+        hook: Optional[HookManager] = None,
+        
     ):
         super().__init__()
+        self.hook = hook or HookManager()
         self.args = args
         self.embed_dim = embed_dim
         self.num_heads = num_heads
@@ -167,5 +171,12 @@ class MultiheadAttention(nn.Module):
             attn = self.inner_attn_ln(attn)
 
         attn = self.out_proj(attn)
+        self.hook("out_proj", ret = attn)
 
         return attn, attn_weights
+    
+    #/*vqa_model.beit3.encoder.layers[0].self_attn.out_proj
+    # MultiwayNetwork(
+     #(A): Linear(in_features=768, out_features=768, bias=True)
+     #(B): Linear(in_features=768, out_features=768, bias=True)
+    # */

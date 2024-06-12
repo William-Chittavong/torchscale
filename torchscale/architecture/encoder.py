@@ -21,13 +21,16 @@ from torchscale.component.relative_position_bias import RelativePositionBias
 from torchscale.component.xmoe.moe_layer import MOELayer
 from torchscale.component.xmoe.routing import Top1Gate, Top2Gate
 
-
+from torchscale.component.hook import HookManager
+from types import Optional
 class EncoderLayer(nn.Module):
-    def __init__(self, args, depth, is_moe_layer=False, is_encoder_decoder=False):
+    def __init__(self, args, depth, is_moe_layer=False, is_encoder_decoder=False,hook: Optional[HookManager] = None):
         super().__init__()
+        self.hook = hook or HookManager()
         self.args = args
         self.embed_dim = args.encoder_embed_dim
-        self.self_attn = self.build_self_attention(self.embed_dim, args)
+        self.self_attn = self.build_self_attention(self.embed_dim, args,hook = hook.fork("self_attn"))
+
         self.self_attn_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
         self.dropout_module = torch.nn.Dropout(args.dropout)
 
@@ -99,7 +102,7 @@ class EncoderLayer(nn.Module):
             args.subln,
         )
 
-    def build_self_attention(self, embed_dim, args):
+    def build_self_attention(self, embed_dim, args,hook):
         return MultiheadAttention(
             args,
             embed_dim,
@@ -108,6 +111,7 @@ class EncoderLayer(nn.Module):
             self_attention=True,
             encoder_decoder_attention=False,
             subln=args.subln,
+            hook = hook,
         )
 
     def residual_connection(self, x, residual):
@@ -335,6 +339,7 @@ class Encoder(nn.Module):
         features_only=False,
         incremental_state=None,
         positions=None,
+        hook = None,
         **kwargs
     ):
         assert src_tokens is not None or token_embeddings is not None
