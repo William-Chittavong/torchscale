@@ -12,14 +12,18 @@ from torchscale.component.embedding import (
 )
 from torchscale.component.multiway_network import MutliwayEmbedding
 
+from torchscale.component.hook import HookManager
+
+from typing import Optional
 
 class BEiT3(nn.Module):
-    def __init__(self, args, **kwargs):
+    def __init__(self, args, hook: Optional[HookManager] = None, **kwargs):
         super().__init__()
         self.args = args
         assert args.multiway
         assert args.vocab_size > 0
         assert not args.share_encoder_input_output_embed
+        self.hook = hook or HookManager()
         self.text_embed = TextEmbedding(args.vocab_size, args.encoder_embed_dim)
         self.vision_embed = VisionEmbedding(
             args.img_size,
@@ -43,6 +47,7 @@ class BEiT3(nn.Module):
             embed_positions=embed_positions,
             output_projection=None,
             is_encoder_decoder=False,
+            hook= self.hook.fork("encoder"),
         )
 
     def forward(
@@ -53,8 +58,7 @@ class BEiT3(nn.Module):
         attn_mask=None,
         vision_masked_position=None,
         incremental_state=None,
-        positions=None,
-        hook = None,
+        positions=None
     ):
         assert textual_tokens is not None or visual_tokens is not None
 
@@ -90,9 +94,10 @@ class BEiT3(nn.Module):
             token_embeddings=x,
             multiway_split_position=multiway_split_position,
             incremental_state=incremental_state,
-            positions=positions,
-            hook = hook
+            positions=positions
         )
         encoder_out["multiway_split_position"] = multiway_split_position
+        
+        #self.hook.finalize()
 
         return encoder_out

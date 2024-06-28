@@ -51,7 +51,7 @@ class MultiheadAttention(nn.Module):
             args, nn.Linear(embed_dim, embed_dim, bias=True)
         )
         self.inner_attn_ln = (
-            MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
+            MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps,hook = hook.fork("inner_attn_ln")))
             if subln and self.self_attention
             else None
         )
@@ -169,14 +169,7 @@ class MultiheadAttention(nn.Module):
 
         if self.inner_attn_ln is not None:
             attn = self.inner_attn_ln(attn)
-
-        attn = self.out_proj(attn)
-        self.hook("out_proj", ret = attn)
+            
+        attn = self.hook("out_proj_post", ret = self.out_proj(attn))
 
         return attn, attn_weights
-    
-    #/*vqa_model.beit3.encoder.layers[0].self_attn.out_proj
-    # MultiwayNetwork(
-     #(A): Linear(in_features=768, out_features=768, bias=True)
-     #(B): Linear(in_features=768, out_features=768, bias=True)
-    # */

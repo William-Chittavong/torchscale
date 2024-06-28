@@ -3,6 +3,7 @@ from collections import defaultdict
 
 
 class HookManager(object):
+    def __init__(self, hook_dict: Dict[Text, List[Callable]] = None):
         self.hook_dict = hook_dict or defaultdict(list)
         self.called = defaultdict(int)
         self.forks = dict()

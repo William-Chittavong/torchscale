@@ -9,7 +9,7 @@ import torch.nn as nn
 
 def MultiwayWrapper(args, module, dim=1):
     if args.multiway:
-        return MultiwayNetwork(module, dim=dim)
+        return  MultiwayNetwork(module, dim=dim)
     return module
 
 

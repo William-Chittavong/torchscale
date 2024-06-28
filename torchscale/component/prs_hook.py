@@ -19,13 +19,12 @@ class PRSLogger(object):
         self.post_ln_std = None
         self.post_ln_mean = None
         self.model = model
+        self.final_layer = 11
 
     @torch.no_grad()
     def compute_attentions(self, ret):
-        #vqa_model.beit3.encoder.layers[0].self_attn.out_proj.A.bias not sure if needed.
-        bias_term = self.model.visual.transformer.resblocks[
-            self.current_layer
-        ].attn.out_proj.bias
+        bias_term = self.model.encoder.layers[self.current_layer].self_attn.out_proj.bias
+
         self.current_layer += 1
         return_value = ret[:, 0].detach().cpu()
         self.attentions.append(
@@ -40,15 +39,38 @@ class PRSLogger(object):
         self.mlps.append(ret[:, 0].detach().cpu())  # [b, d]
         return ret
 
+ 
     @torch.no_grad()
-    def log_post_ln_mean(self, ret):
-        self.post_ln_mean = ret.detach().cpu()  # [b, 1]
+    def log_layernorm_stats(self, ret):
+        self.post_ln_mean = ret.mean().detach().cpu()
+        self.post_ln_std = ret.std().detach().cpu()
         return ret
 
-    @torch.no_grad()
-    def log_post_ln_std(self, ret):
-        
-        return ret
+    def register_hooks(self):
+        self.model.hook_manager.register(
+            "encoder.layer.*.self_attn.out_proj_post*",
+            self.compute_attentions
+        )
+        self.model.hook_manager.register(
+            "encoder.layer.not_moe.ffn.fc2_post",
+            self.compute_mlps
+        )
+        #MOE FFNs
+        self.model.hook_manager.register(
+            "encoder.layer.moe.expert.*.ffn.fc2_post",
+            self.compute_mlps
+        )
+        # LN before the encoder layers
+        self.model.hook_manager.register(
+            "encoder.layer.0.self_attn_layer_norm.*.ln_post",self.compute_mlps
+        )
+
+        #after final layer's layer norm. 
+        self.model.hook_manager.register(
+            f"encoder.layer.{self.final_layer}.final_layer_norm.*.post",
+            self.log_layernorm_stats
+        )
+
 
     def _normalize_mlps(self):
         len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]
@@ -58,16 +80,16 @@ class PRSLogger(object):
             - self.post_ln_mean[:, :, np.newaxis].to(self.device) / len_intermediates
         )
         weighted_mean_centered = (
-            self.model.visual.ln_post.weight.detach().to(self.device) * mean_centered
+            self.model.beit3.encoder.layers[self.final_layer].final_layer_norm.B.weight.detach().to(self.device) * mean_centered
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
             :, :, np.newaxis
         ].to(self.device)
         bias_term = (
-            self.model.visual.ln_post.bias.detach().to(self.device) / len_intermediates
+            self.model.beit3.encoder.layers[self.final_layer].final_layer_norm.B.bias.detach().to(self.device) / len_intermediates
         )
         post_ln = weighted_mean_by_std + bias_term
-        return post_ln @ self.model.visual.proj.detach().to(self.device)
+        return post_ln @ self.model.beit3.encoder.layers[self.final_layer].self_attn.out_proj.B.detach().to(self.device)
 
     def _normalize_attentions(self):
         len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]  # 2*l + 1
@@ -79,16 +101,18 @@ class PRSLogger(object):
             :, :, np.newaxis, np.newaxis, np.newaxis
         ].to(self.device) / (len_intermediates * normalization_term)
         weighted_mean_centered = (
-            self.model.visual.ln_post.weight.detach().to(self.device) * mean_centered
+            self.model.beit3.encoder.layers[self.final_layer].final_layer_norm.B.weight.detach().to(self.device) * mean_centered
+
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
             :, :, np.newaxis, np.newaxis, np.newaxis
         ].to(self.device)
-        bias_term = self.model.visual.ln_post.bias.detach().to(self.device) / (
+        
+        bias_term = self.model.beit3.encoder.layers[self.final_layer].final_layer_norm.B.bias.detach().to(self.device) / (
             len_intermediates * normalization_term
         )
         post_ln = weighted_mean_by_std + bias_term
-        return post_ln @ self.model.visual.proj.detach().to(self.device)
+        return post_ln @ self.model.beit3.encoder.layers[self.final_layer].self_attn.out_proj.B.detach().to(self.device)
 
     @torch.no_grad()
     def finalize(self, representation):
@@ -114,28 +138,8 @@ class PRSLogger(object):
         self.post_ln_std = None
         torch.cuda.empty_cache()
 
- #/*vqa_model.beit3.encoder.layers[0].self_attn.out_proj
-    # MultiwayNetwork(
-     #(A): Linear(in_features=768, out_features=768, bias=True)
-     #(B): Linear(in_features=768, out_features=768, bias=True)
-    # */
-
 def hook_prs_logger(model, device):
     """Hooks a projected residual stream logger to the model."""
     prs = PRSLogger(model, device)
-    # model.hook_manager.register(
-    #     "visual.transformer.resblocks.*.attn.out.post", prs.compute_attentions
-    # )
-    model.hook_manager.register(
-        "encoder.layers.*.self_attn.out.post", prs.compute_attentions
-    )
-
-    
-
-    model.hook_manager.register(
-        "visual.transformer.resblocks.*.mlp.c_proj.post", prs.compute_mlps
-    )
-    # model.hook_manager.register("visual.ln_pre_post", prs.compute_mlps)
-    # model.hook_manager.register("visual.ln_post.mean", prs.log_post_ln_mean)
-    # model.hook_manager.register("visual.ln_post.sqrt_var", prs.log_post_ln_std)
+    prs.register_hooks()
     return prs

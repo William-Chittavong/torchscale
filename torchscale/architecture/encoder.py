@@ -7,10 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from fairscale.nn import checkpoint_wrapper, wrap
-try:
-    from apex.normalization import FusedLayerNorm as LayerNorm
-except ModuleNotFoundError:
-    from torch.nn import LayerNorm
+
 
 from torchscale.architecture.utils import init_bert_params
 from torchscale.component.droppath import DropPath
@@ -23,15 +20,30 @@ from torchscale.component.xmoe.routing import Top1Gate, Top2Gate
 
 from torchscale.component.hook import HookManager
 from types import Optional
+import math
+import numbers
+
+
+try:
+    from fused_norm import FusedLayerNorm as LayerNorm
+except ModuleNotFoundError:
+    from layer_norm import LayerNorm
+
+
+
+
+
 class EncoderLayer(nn.Module):
     def __init__(self, args, depth, is_moe_layer=False, is_encoder_decoder=False,hook: Optional[HookManager] = None):
         super().__init__()
         self.hook = hook or HookManager()
         self.args = args
         self.embed_dim = args.encoder_embed_dim
-        self.self_attn = self.build_self_attention(self.embed_dim, args,hook = hook.fork("self_attn"))
+        self.self_attn = self.build_self_attention(self.embed_dim, args,hook = hook)
 
-        self.self_attn_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
+        # do i need to use self_attn_layer_norm.B to access the mean and var? or just ignore the B? 
+        self.self_attn_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, hook = hook.fork("self_attn_layer_norm")))
+        
         self.dropout_module = torch.nn.Dropout(args.dropout)
 
         if args.drop_path_rate > 0:
@@ -52,6 +64,7 @@ class EncoderLayer(nn.Module):
                 self.build_ffn(
                     self.embed_dim,
                     self.args,
+                    self.hook.fork("not_moe"),
                 ),
             )
         else:
@@ -74,9 +87,9 @@ class EncoderLayer(nn.Module):
                     args.moe_eval_capacity_token_fraction,
                     use_xmoe=args.use_xmoe,
                 )
-            experts = make_experts(args, self.embed_dim, self.ffn_dim)
+            experts = make_experts(args, self.embed_dim, self.ffn_dim,self.hook.fork("moe"))
             self.moe_layer = MOELayer(gate, experts, args)
-        self.final_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
+        self.final_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps, hook = hook.fork("final_layer_norm")))
 
         if args.deepnorm:
             if is_encoder_decoder:
@@ -91,7 +104,7 @@ class EncoderLayer(nn.Module):
         else:
             self.alpha = 1.0
 
-    def build_ffn(self, embed_dim, args):
+    def build_ffn(self, embed_dim, args,hook):
         return FeedForwardNetwork(
             embed_dim,
             self.ffn_dim,
@@ -100,6 +113,7 @@ class EncoderLayer(nn.Module):
             args.activation_dropout,
             args.layernorm_eps,
             args.subln,
+            hook = hook.fork("ffn"),
         )
 
     def build_self_attention(self, embed_dim, args,hook):
@@ -111,7 +125,7 @@ class EncoderLayer(nn.Module):
             self_attention=True,
             encoder_decoder_attention=False,
             subln=args.subln,
-            hook = hook,
+            hook = hook.fork("self_attn"), #or maybe just pass in hook.
         )
 
     def residual_connection(self, x, residual):
@@ -126,8 +140,8 @@ class EncoderLayer(nn.Module):
             attn_mask = attn_mask.masked_fill(attn_mask.to(torch.bool), -1e8)
 
         residual = x
-        if self.normalize_before:
-            x = self.self_attn_layer_norm(x)
+        if self.normalize_before: #this seems to be true since sub_ln is true.
+            x = self.self_attn_layer_norm(x) # norm before the self attn layer
         x, _ = self.self_attn(
             query=x,
             key=x,
@@ -174,11 +188,12 @@ class Encoder(nn.Module):
         embed_positions=None,
         output_projection=None,
         is_encoder_decoder=False,
+        hook: Optional[HookManager] = None,
         **kwargs
     ):
         self.args = args
         super().__init__(**kwargs)
-
+        self.hook = hook or HookManager()        
         self.dropout_module = torch.nn.Dropout(args.dropout)
 
         embed_dim = args.encoder_embed_dim
@@ -199,7 +214,7 @@ class Encoder(nn.Module):
 
         if args.layernorm_embedding:
             self.layernorm_embedding = MultiwayWrapper(
-                args, LayerNorm(embed_dim, eps=args.layernorm_eps), dim=1
+                args, LayerNorm(embed_dim, eps=args.layernorm_eps,hook = self.hook), dim=1
             )
         else:
             self.layernorm_embedding = None
@@ -208,19 +223,24 @@ class Encoder(nn.Module):
 
         moe_freq = args.moe_freq
         for i in range(args.encoder_layers):
-            is_moe_layer = moe_freq != 0 and (i + 1) % moe_freq == 0
+            # not all encoder layers are moe
+            is_moe_layer = moe_freq != 0 and (i + 1) % moe_freq == 0 
             self.layers.append(
                 self.build_encoder_layer(
                     args,
                     depth=i,
                     is_moe_layer=is_moe_layer,
                     is_encoder_decoder=is_encoder_decoder,
+                    hook = self.hook.fork(f"layer.{i}")
                 )
             )
         self.num_layers = len(self.layers)
-
+        
+        # except for captioning and retrieval, normalize_output = false
+        # so layer_norm is None in those cases
+        # see final layer norm
         if args.encoder_normalize_before and args.normalize_output:
-            self.layer_norm = MultiwayWrapper(args, LayerNorm(embed_dim, eps=args.layernorm_eps))
+            self.layer_norm = MultiwayWrapper(args, LayerNorm(embed_dim, eps=args.layernorm_eps,hook = self.hook))
         else:
             self.layer_norm = None
 
@@ -295,13 +315,14 @@ class Encoder(nn.Module):
         return output_projection
 
     def build_encoder_layer(
-        self, args, depth, is_moe_layer=False, is_encoder_decoder=False
+        self, args, depth, is_moe_layer=False, is_encoder_decoder=False,hook: Optional[HookManager] = None
     ):
         layer = EncoderLayer(
             args,
             depth,
             is_moe_layer=is_moe_layer,
             is_encoder_decoder=is_encoder_decoder,
+            hook = hook
         )
         if args.checkpoint_activations:
             layer = checkpoint_wrapper(layer)
@@ -323,6 +344,7 @@ class Encoder(nn.Module):
                 x = embed + self.embed_positions(src_tokens, positions=positions)
             else:
                 x = embed + self.embed_positions(x, positions=positions)
+        # this is false in the Encoder Config so not the intial LN
         if self.layernorm_embedding is not None:
             x = self.layernorm_embedding(x)
         x = self.dropout_module(x)
@@ -339,7 +361,6 @@ class Encoder(nn.Module):
         features_only=False,
         incremental_state=None,
         positions=None,
-        hook = None,
         **kwargs
     ):
         assert src_tokens is not None or token_embeddings is not None
@@ -390,9 +411,13 @@ class Encoder(nn.Module):
             l_aux.append(l_aux_i)
 
         if self.layer_norm is not None:
+            # since the captioning version of beit3 is the most similar to
+            #  clip for image-text, text-image retrival (captioning) and
+            # the captioning model has layer_norm not to false, this will be applied.  
             x = self.layer_norm(x)
 
         if not features_only and self.output_projection is not None:
+            # seems like i can log this as well. although this is just the encoder_out. 
             x = self.output_projection(x)
 
         return {
