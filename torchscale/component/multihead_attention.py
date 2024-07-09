@@ -169,7 +169,10 @@ class MultiheadAttention(nn.Module):
 
         if self.inner_attn_ln is not None:
             attn = self.inner_attn_ln(attn)
-            
-        attn = self.hook("out_proj_post", ret = self.out_proj(attn))
+        
+        attn = self.out_proj(attn)
+        
+        # hook the reshaped attn to obtain the head without changing the operations
+        self.hook("out_proj_post", ret = rearrange(attn,"b l (h d) -> b l h d",h = self.num_heads))
 
         return attn, attn_weights

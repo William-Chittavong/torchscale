@@ -42,7 +42,7 @@ class EncoderLayer(nn.Module):
         self.self_attn = self.build_self_attention(self.embed_dim, args,hook = hook)
 
         # do i need to use self_attn_layer_norm.B to access the mean and var? or just ignore the B? 
-        self.self_attn_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, hook = hook.fork("self_attn_layer_norm")))
+        self.self_attn_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps = args.layernorm_eps))
         
         self.dropout_module = torch.nn.Dropout(args.dropout)
 
@@ -89,7 +89,7 @@ class EncoderLayer(nn.Module):
                 )
             experts = make_experts(args, self.embed_dim, self.ffn_dim,self.hook.fork("moe"))
             self.moe_layer = MOELayer(gate, experts, args)
-        self.final_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps, hook = hook.fork("final_layer_norm")))
+        self.final_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
 
         if args.deepnorm:
             if is_encoder_decoder:
@@ -214,7 +214,7 @@ class Encoder(nn.Module):
 
         if args.layernorm_embedding:
             self.layernorm_embedding = MultiwayWrapper(
-                args, LayerNorm(embed_dim, eps=args.layernorm_eps,hook = self.hook), dim=1
+                args, LayerNorm(embed_dim, eps=args.layernorm_eps), dim=1
             )
         else:
             self.layernorm_embedding = None
@@ -240,7 +240,7 @@ class Encoder(nn.Module):
         # so layer_norm is None in those cases
         # see final layer norm
         if args.encoder_normalize_before and args.normalize_output:
-            self.layer_norm = MultiwayWrapper(args, LayerNorm(embed_dim, eps=args.layernorm_eps,hook = self.hook))
+            self.layer_norm = MultiwayWrapper(args, LayerNorm(embed_dim, eps=args.layernorm_eps,hook = hook.fork("layer_norm_post")))
         else:
             self.layer_norm = None
 

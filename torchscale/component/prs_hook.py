@@ -19,7 +19,6 @@ class PRSLogger(object):
         self.post_ln_std = None
         self.post_ln_mean = None
         self.model = model
-        self.final_layer = 11
         self.vision_head = torch.nn.Linear(embed_dim, embed_dim, bias=False)
 
     @torch.no_grad()
@@ -42,44 +41,51 @@ class PRSLogger(object):
 
  
     @torch.no_grad()
-    def log_layernorm_stats(self, ret):
-        self.post_ln_mean = ret.mean().detach().cpu()
-        self.post_ln_std = ret.std().detach().cpu()
+    def log_post_ln_mean(self, ret):
+        self.post_ln_mean = ret.detach().cpu()  # [b, 1]
         return ret
+
+    @torch.no_grad()
+    def log_post_ln_std(self, ret):
+        self.post_ln_std = ret.detach().cpu()  # [b, 1]
+        return ret
+
 
     def register_hooks(self):
         self.model.hook_manager.register(
             "encoder.layer.*.self_attn.out_proj_post*",
-            self.compute_attentions
+            self.compute_attentions()
         )
-        # not sure on moe of experts if necessary...
-        
-        #self.model.hook_manager.register(
-        #    "encoder.layer.not_moe.ffn.fc2_post",
-        #    self.compute_mlps
-        #)
-        #MOE FFNs
-        #self.model.hook_manager.register(
-        #    "encoder.layer.moe.expert.*.ffn.fc2_post",
-        #    self.compute_mlps
-        #)
-        
+       
         self.model.hook_manager.register(
-            "encoder.layer.*.ffn.fc2_post",self.compute_mlps
+            "encoder.layer.not_moe.ffn.fc2_post",
+            self.compute_mlps
         )
+        
+        #MOE FFNs
+        self.model.hook_manager.register(
+            "encoder.layer.moe.expert.*.ffn.fc2_post",
+            self.compute_mlps
+        )
+        
         # IS THE THING BELOW needed? why is the layer norm before
         # the transformer resblocks included in the mlps?
         
         # LN before the other encoder layers but self attn already happened
         # what about layernorm in the forward embedding? ah nvm, its before self attn
         self.model.hook_manager.register(
-            "encoder.layer.0.self_attn_layer_norm.*.ln_post",self.compute_mlps
+            "encoder.layer.0.self_attn_layer_norm.*.ln_post",self.compute_mlps()
         )
 
         #after final layer's layer norm. 
         self.model.hook_manager.register(
-            f"encoder.layer.layer_norm.post",
-            self.log_layernorm_stats
+            f"encoder.layer_norm_post.mean",
+            self.log_post_ln_mean()
+        )
+        
+        self.model.hook_manager.register(
+            f"encoder.layer_norm_post.sqrt_var",
+            self.log_post_ln_std()
         )
 
 
@@ -131,7 +137,7 @@ class PRSLogger(object):
         return post_ln @ self.model.beit3.encoder.output_projection.detach().to(self.device)
 
     @torch.no_grad()
-    def finalize(self, representation):
+    def finalize(self):
         """We calculate the post-ln scaling, project it and normalize by the last norm."""
         self.attentions = torch.stack(self.attentions, axis=1).to(
             self.device

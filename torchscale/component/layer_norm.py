@@ -1,8 +1,9 @@
+import torch
 from torch import nn
 from hook import HookManager
 from typing import Optional
 import numbers
-import torch
+
 
 
 class LayerNorm(nn.Module):
