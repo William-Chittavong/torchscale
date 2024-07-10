@@ -164,8 +164,8 @@ class PRSLogger(object):
         self.post_ln_std = None
         torch.cuda.empty_cache()
 
-def hook_prs_logger(model, device):
+def hook_prs_logger(model, embed_dim,device):
     """Hooks a projected residual stream logger to the model."""
-    prs = PRSLogger(model, device)
+    prs = PRSLogger(model, embed_dim,device)
     prs.register_hooks()
     return prs

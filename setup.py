@@ -15,7 +15,7 @@ setup(
     long_description_content_type="text/markdown",
     keywords="Transformers at any scale",
     license="MIT",
-    url="https://github.com/microsoft/torchscale",
+    url="https://github.com/William-Chittavong/torchscale.git",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=["torch>=1.8", "fairscale==0.4.0", "timm==0.6.13", "einops"],
     python_requires=">=3.8.0",
