@@ -6,7 +6,7 @@ import math
 import torch
 import torch.nn.functional as F
 from torch import nn
-from hook import HookManager
+from component.hook import HookManager
 from einops import rearrange
 try:
     from apex.normalization import FusedLayerNorm as LayerNorm
@@ -17,7 +17,7 @@ from .multiway_network import MultiwayWrapper
 from .xpos_relative_position import XPOS
 from .flash_attention import flash_attn_func
 from typing import Optional
-from hook import HookManager
+
 class MultiheadAttention(nn.Module):
     def __init__(
         self,

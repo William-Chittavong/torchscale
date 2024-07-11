@@ -14,7 +14,7 @@ import numpy as np
 from torchscale.component import beit3_utils as utils
 from torchscale.component.modeling_utils import BEiT3Wrapper, get_base_config, get_large_config
 from typing import Optional
-from torchscale.component.hook import HookManager
+from component.hook import HookManager
 
 class TwoLayerMLP(nn.Module):
     def __init__(

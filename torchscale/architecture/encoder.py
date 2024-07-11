@@ -18,7 +18,7 @@ from torchscale.component.relative_position_bias import RelativePositionBias
 from torchscale.component.xmoe.moe_layer import MOELayer
 from torchscale.component.xmoe.routing import Top1Gate, Top2Gate
 
-from torchscale.component.hook import HookManager
+from component.hook import HookManager
 from types import Optional
 import math
 import numbers

@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 
 from .xmoe.global_groups import get_moe_group
 
-from hook import HookManager
+from component.hook import HookManager
 from typing import Optional
 
 
