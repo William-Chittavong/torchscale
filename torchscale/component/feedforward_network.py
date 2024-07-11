@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 
 from .xmoe.global_groups import get_moe_group
 
-from component.hook import HookManager
+from torchscale.component.hook import HookManager
 from typing import Optional
 
 

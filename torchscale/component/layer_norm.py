@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from component.hook import HookManager
+from torchscale.component.hook import HookManager
 from typing import Optional
 import numbers
 

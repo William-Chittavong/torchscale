@@ -3,7 +3,7 @@ import importlib
 
 from torch.nn import functional as F
 
-from component.hook import HookManager
+from torchscale.component.hook import HookManager
 from typing import Optional
 
 

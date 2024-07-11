@@ -6,7 +6,7 @@ import math
 import torch
 import torch.nn.functional as F
 from torch import nn
-from component.hook import HookManager
+from torchscale.component.hook import HookManager
 from einops import rearrange
 try:
     from apex.normalization import FusedLayerNorm as LayerNorm
