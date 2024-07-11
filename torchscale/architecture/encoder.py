@@ -25,9 +25,9 @@ import numbers
 
 
 try:
-    from fused_norm import FusedLayerNorm as LayerNorm
+    from torchscale.component.fused_norm import FusedLayerNorm as LayerNorm
 except ModuleNotFoundError:
-    from layer_norm import LayerNorm
+    from torchscale.component.layer_norm import LayerNorm
 
 
 
