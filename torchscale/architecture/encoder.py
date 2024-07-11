@@ -19,7 +19,7 @@ from torchscale.component.xmoe.moe_layer import MOELayer
 from torchscale.component.xmoe.routing import Top1Gate, Top2Gate
 
 from torchscale.component.hook import HookManager
-from types import Optional
+from typing import Optional
 import math
 import numbers
 
