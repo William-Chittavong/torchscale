@@ -3,14 +3,14 @@ import importlib
 
 from torch.nn import functional as F
 
-from torchscale.component.hook import HookManager
+from .hook import HookManager
 from typing import Optional
 
 
 from apex.normalization import FusedLayerNorm as ApexFusedLayerNorm
 from apex.normalization import  FusedLayerNormAffineFunction
 
-from layer_norm import LayerNorm
+from .layer_norm import LayerNorm
 from apex._autocast_utils import _cast_if_autocast_enabled
 
 class FusedLayerNormFunction(torch.autograd.Function):
