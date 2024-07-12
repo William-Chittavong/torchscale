@@ -13,6 +13,7 @@ try:
     from .fused_norm import FusedLayerNorm as LayerNorm
 except ModuleNotFoundError:
     from .layer_norm import LayerNorm
+#from .layer_norm import LayerNorm
 
 from .multiway_network import MultiwayWrapper
 from .xpos_relative_position import XPOS
