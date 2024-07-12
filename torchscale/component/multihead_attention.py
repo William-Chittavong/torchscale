@@ -13,6 +13,13 @@ try:
 except ModuleNotFoundError:
     from torch.nn import LayerNorm
 
+
+
+try:
+    from .fused_norm import FusedLayerNorm as LayerNorm
+except ModuleNotFoundError:
+    from .layer_norm import LayerNorm
+
 from .multiway_network import MultiwayWrapper
 from .xpos_relative_position import XPOS
 from .flash_attention import flash_attn_func
