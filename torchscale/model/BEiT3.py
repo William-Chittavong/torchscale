@@ -18,7 +18,7 @@ from torchscale.component.hook import HookManager
 
 from typing import Optional
 from torchscale.component import beit3_utils as utils
-from torchscale.component.modeling_utils import BEiT3Wrapper, get_base_config, get_large_config
+
 
 from timm.models.layers import trunc_normal_ as __call_trunc_normal_
 
