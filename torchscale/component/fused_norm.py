@@ -13,6 +13,9 @@ from apex.normalization import  FusedLayerNormAffineFunction
 from .layer_norm import LayerNorm
 from apex._autocast_utils import _cast_if_autocast_enabled
 
+global fused_layer_norm_cuda
+fused_layer_norm_cuda = None
+
 class FusedLayerNormFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, normalized_shape, eps, memory_efficient=False):
@@ -86,10 +89,29 @@ def fused_layer_norm(input, normalized_shape, eps=1e-6, memory_efficient=False):
 
 
 
-class FusedLayerNorm(ApexFusedLayerNorm):
-    def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, hook: Optional[HookManager] = None):
+class FusedLayerNorm(torch.nn.Module):
+    def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, memory_efficient=False, hook: Optional[HookManager] = None):
         super().__init__()
         self.hook = hook or HookManager()
+        
+        global fused_layer_norm_cuda
+        fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
+
+        if isinstance(normalized_shape, numbers.Integral):
+            normalized_shape = (normalized_shape,)
+        self.normalized_shape = torch.Size(normalized_shape)
+        self.eps = eps
+        self.elementwise_affine = elementwise_affine
+        self.memory_efficient = memory_efficient
+        if self.elementwise_affine:
+            self.weight = Parameter(torch.empty(*normalized_shape))
+        else:
+            self.register_parameter("weight", None)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        if self.elementwise_affine:
+            init.ones_(self.weight)
 
     def forward(self, input):
         if torch.jit.is_tracing() or torch.jit.is_scripting() or not input.is_cuda:
