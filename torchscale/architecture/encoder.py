@@ -24,10 +24,11 @@ import math
 import numbers
 
 
-try:
-    from torchscale.component.fused_norm import FusedLayerNorm as LayerNorm
-except ModuleNotFoundError:
-    from torchscale.component.layer_norm import LayerNorm
+# try:
+#     from torchscale.component.fused_norm import FusedLayerNorm as LayerNorm
+# except ModuleNotFoundError:
+#     from torchscale.component.layer_norm import LayerNorm
+from torchscale.component.layer_norm import LayerNorm
 
 
 

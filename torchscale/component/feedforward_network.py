@@ -7,16 +7,13 @@ import torch.nn.functional as F
 
 
 
-try:
-    from .fused_norm import FusedLayerNorm as LayerNorm
-except ModuleNotFoundError:
-    from .layer_norm import LayerNorm
-    
-    
 # try:
-#     from apex.normalization import FusedLayerNorm as LayerNorm
+#     from .fused_norm import FusedLayerNorm as LayerNorm
 # except ModuleNotFoundError:
-#     from torch.nn import LayerNorm
+#     from .layer_norm import LayerNorm
+    
+from .layer_norm import LayerNorm    
+
 
 
 from .xmoe.global_groups import get_moe_group

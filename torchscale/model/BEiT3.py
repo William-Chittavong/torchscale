@@ -129,6 +129,7 @@ class BEiT3(nn.Module):
         encoder_out = self.encoder(
             src_tokens=None,
             encoder_padding_mask=encoder_padding_mask,
+
             attn_mask=attn_mask,
             token_embeddings=x,
             multiway_split_position=multiway_split_position,
