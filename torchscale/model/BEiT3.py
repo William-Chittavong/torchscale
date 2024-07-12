@@ -97,7 +97,7 @@ class BEiT3(nn.Module):
         attn_mask=None,
         vision_masked_position=None,
         incremental_state=None,
-        positions=None
+        positions=None,
         hook = None,
     ):
         assert textual_tokens is not None or visual_tokens is not None
