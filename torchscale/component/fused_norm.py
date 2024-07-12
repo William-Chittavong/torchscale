@@ -88,7 +88,7 @@ def fused_layer_norm(input, normalized_shape, eps=1e-6, memory_efficient=False):
 
 class FusedLayerNorm(ApexFusedLayerNorm):
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, hook: Optional[HookManager] = None):
-        super().__init__(normalized_shape, eps=eps, elementwise_affine=elementwise_affine)
+        super().__init__()
         self.hook = hook or HookManager()
 
     def forward(self, input):
