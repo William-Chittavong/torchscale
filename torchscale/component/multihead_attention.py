@@ -8,12 +8,6 @@ import torch.nn.functional as F
 from torch import nn
 from torchscale.component.hook import HookManager
 from einops import rearrange
-try:
-    from apex.normalization import FusedLayerNorm as LayerNorm
-except ModuleNotFoundError:
-    from torch.nn import LayerNorm
-
-
 
 try:
     from .fused_norm import FusedLayerNorm as LayerNorm
