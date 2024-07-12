@@ -51,44 +51,6 @@ class PRSLogger(object):
         return ret
 
 
-    def register_hooks(self):
-        self.model.hook_manager.register(
-            "encoder.layer.*.self_attn.out_proj_post*",
-            self.compute_attentions()
-        )
-       
-        self.model.hook_manager.register(
-            "encoder.layer.not_moe.ffn.fc2_post",
-            self.compute_mlps
-        )
-        
-        #MOE FFNs
-        self.model.hook_manager.register(
-            "encoder.layer.moe.expert.*.ffn.fc2_post",
-            self.compute_mlps
-        )
-        
-        # IS THE THING BELOW needed? why is the layer norm before
-        # the transformer resblocks included in the mlps?
-        
-        # LN before the other encoder layers but self attn already happened
-        # what about layernorm in the forward embedding? ah nvm, its before self attn
-        self.model.hook_manager.register(
-            "encoder.layer.0.self_attn_layer_norm.*.ln_post",self.compute_mlps()
-        )
-
-        #after final layer's layer norm. 
-        self.model.hook_manager.register(
-            f"encoder.layer_norm_post.mean",
-            self.log_post_ln_mean()
-        )
-        
-        self.model.hook_manager.register(
-            f"encoder.layer_norm_post.sqrt_var",
-            self.log_post_ln_std()
-        )
-
-
     def _normalize_mlps(self):
         len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]
         # This is just the normalization layer:
@@ -167,5 +129,38 @@ class PRSLogger(object):
 def hook_prs_logger(model, embed_dim,device):
     """Hooks a projected residual stream logger to the model."""
     prs = PRSLogger(model, embed_dim,device)
-    prs.register_hooks()
+    
+    model.hook_manager.register(
+            "encoder.layer.*.self_attn.out_proj_post*",
+        prs.compute_attentions
+    )
+    
+    model.hook_manager.register(
+        "encoder.layer.not_moe.ffn.fc2_post",
+        prs.compute_mlps
+    )
+    
+    #MOE FFNs
+    model.hook_manager.register(
+        "encoder.layer.moe.expert.*.ffn.fc2_post",
+        prs.compute_mlps
+    )
+    
+    # what about layernorm in the forward embedding? ah nvm, its before self attn
+    model.hook_manager.register(
+        "encoder.layer.0.self_attn_layer_norm.*.ln_post", prs.compute_mlps
+    )
+
+    #after final layer's layer norm. 
+    model.hook_manager.register(
+        "encoder.layer_norm_post.mean",
+        prs.log_post_ln_mean
+    )
+    
+    model.model.hook_manager.register(
+        "encoder.layer_norm_post.sqrt_var",
+        prs.log_post_ln_std
+    )
+    
+  
     return prs
