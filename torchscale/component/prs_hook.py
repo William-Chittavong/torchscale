@@ -131,7 +131,7 @@ def hook_prs_logger(model, embed_dim,device):
     prs = PRSLogger(model, embed_dim,device)
     
     model.hook_manager.register(
-            "encoder.layer.*.self_attn.out_proj_post*",
+            "encoder.layer.*.self_attn.out_proj_post",
         prs.compute_attentions
     )
     
@@ -157,7 +157,7 @@ def hook_prs_logger(model, embed_dim,device):
         prs.log_post_ln_mean
     )
     
-    model.model.hook_manager.register(
+    model.hook_manager.register(
         "encoder.layer_norm_post.sqrt_var",
         prs.log_post_ln_std
     )
