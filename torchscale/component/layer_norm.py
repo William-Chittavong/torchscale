@@ -40,6 +40,10 @@ class LayerNorm(nn.Module):
         else:
             self.register_parameter("weight", None)
             self.register_parameter("bias", None)
+    def reset_parameters(self):
+        if self.elementwise_affine:
+            torch.nn.init.ones_(self.weight)
+            torch.nn.init.zeros_(self.bias)
 
     def forward(self, x: torch.Tensor):
         orig_type = x.dtype
