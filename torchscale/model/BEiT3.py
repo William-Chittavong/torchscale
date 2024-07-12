@@ -203,7 +203,7 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
                 textual_tokens=None, 
                 visual_tokens=image, 
                 text_padding_position=None,
-                hook = self.hook 
+                hook = self.hook_manager 
             )
             x = outputs["encoder_out"]
             vision_cls = self.vision_head(x[:, 0, :])
