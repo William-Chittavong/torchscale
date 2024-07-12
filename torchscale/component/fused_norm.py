@@ -2,16 +2,40 @@ import torch
 import importlib
 
 from torch.nn import functional as F
+from torch.nn.parameter import Parameter
+from torch.nn import init
 
 from .hook import HookManager
 from typing import Optional
-
-
+from typing import Optional, Sequence
+import numbers
 #from apex.normalization import FusedLayerNorm as ApexFusedLayerNorm
 #from apex.normalization import  FusedLayerNormAffineFunction
 
 from .layer_norm import LayerNorm
-from apex._autocast_utils import _cast_if_autocast_enabled
+
+
+__all__ = ["_cast_if_autocast_enabled"]
+
+
+def _get_autocast_dtypes() -> Sequence[torch.dtype]:
+    if torch.cuda.is_bf16_supported():
+        return [torch.half, torch.bfloat16]
+    return [torch.half]
+
+
+def _get_current_dtype(dtype: Optional[torch.dtype] = None) -> torch.dtype:
+    if not torch.is_autocast_enabled():
+        return torch.float or dtype
+    else:
+        return torch.get_autocast_gpu_dtype()
+
+
+def _cast_if_autocast_enabled(*args):
+    if not torch.is_autocast_enabled():
+        return args
+    else:
+        return torch.cuda.amp.autocast_mode._cast(args, torch.get_autocast_gpu_dtype())
 
 global fused_layer_norm_cuda
 fused_layer_norm_cuda = None
@@ -112,6 +136,7 @@ class FusedLayerNorm(torch.nn.Module):
     def reset_parameters(self):
         if self.elementwise_affine:
             init.ones_(self.weight)
+            init.zeros_(self.bias)
 
     def forward(self, input):
         if torch.jit.is_tracing() or torch.jit.is_scripting() or not input.is_cuda:
