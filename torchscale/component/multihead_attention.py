@@ -176,5 +176,5 @@ class MultiheadAttention(nn.Module):
         
         # hook the reshaped attn to obtain the head without changing the operations
         self.hook("out_proj_post", ret = rearrange(attn,"b l (h d) -> b l h d",h = self.num_heads))
-
+        self.hook.finalize()
         return attn, attn_weights
