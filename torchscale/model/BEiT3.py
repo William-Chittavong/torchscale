@@ -97,8 +97,7 @@ class BEiT3(nn.Module):
         attn_mask=None,
         vision_masked_position=None,
         incremental_state=None,
-        positions=None,
-        hook = None,
+        positions=None
     ):
         assert textual_tokens is not None or visual_tokens is not None
 
@@ -135,8 +134,7 @@ class BEiT3(nn.Module):
             token_embeddings=x,
             multiway_split_position=multiway_split_position,
             incremental_state=incremental_state,
-            positions=positions,
-            hook = self.hook
+            positions=positions
         )
         encoder_out["multiway_split_position"] = multiway_split_position
         
@@ -186,8 +184,9 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
             hook: Optional[HookManager] = None,
             **kwargs
     ):
-        super(BEiT3ForRetrieval, self).__init__(args=args , hook = self.hook_manager)
-        self.hook_manager = hook or HookManager()
+        self.hook_manager = hook or HookManager()       
+        super(BEiT3ForRetrieval, self).__init__(args=args , hook = self.hook_manager.fork("beit3"))
+       
         embed_dim = args.encoder_embed_dim
         self.language_head = nn.Linear(embed_dim, embed_dim, bias=False)
         self.vision_head = nn.Linear(embed_dim, embed_dim, bias=False)
