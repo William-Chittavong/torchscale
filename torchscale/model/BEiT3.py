@@ -147,10 +147,10 @@ class BEiT3(nn.Module):
 
 
 class BEiT3Wrapper(nn.Module):
-    def __init__(self, args, **kwargs):
+    def __init__(self, args,hook: Optional[HookManager] = None, **kwargs):
         super().__init__()
         self.args = args
-        self.beit3 = BEiT3(args)
+        self.beit3 = BEiT3(args,hook = hook)
         self.apply(self._init_weights)
 
     def fix_init_weight(self):
@@ -186,7 +186,7 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
             hook: Optional[HookManager] = None,
             **kwargs
     ):
-        super(BEiT3ForRetrieval, self).__init__(args=args)
+        super(BEiT3ForRetrieval, self).__init__(args=args , hook = self.hook_manager)
         self.hook_manager = hook or HookManager()
         embed_dim = args.encoder_embed_dim
         self.language_head = nn.Linear(embed_dim, embed_dim, bias=False)
@@ -204,8 +204,7 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
             outputs = self.beit3(
                 textual_tokens=None, 
                 visual_tokens=image, 
-                text_padding_position=None,
-                hook = self.hook_manager 
+                text_padding_position=None
             )
             x = outputs["encoder_out"]
             vision_cls = self.vision_head(x[:, 0, :])
