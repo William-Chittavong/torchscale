@@ -105,19 +105,21 @@ class PRSLogger(object):
         self.attentions = torch.stack(self.attentions, axis=1).to(
             self.device
         )  # [b, l, n, h, d]
-        self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
+        #self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
         projected_attentions = self._normalize_attentions()
-        projected_mlps = self._normalize_mlps()
+        #projected_mlps = self._normalize_mlps()
         
         vision_cls_proj_attn = self.vision_head(projected_attentions)
-        vision_cls_proj_mlps = self.vision_head(projected_mlps)
+        #vision_cls_proj_mlps = self.vision_head(projected_mlps)
         
         attentions = F.normalize(vision_cls_proj_attn)
-        mlps = F.normalize(vision_cls_proj_mlps)
+        #mlps = F.normalize(vision_cls_proj_mlps)
         
-        return(
-            attentions,mlps
-        )
+        # return(
+        #     attentions,mlps
+        # )
+        return attentions
+        
 
     def reinit(self):
         self.current_layer = 0
@@ -135,17 +137,18 @@ def hook_prs_logger(model, embed_dim,device):
             "beit3.encoder.layer.*.self_attn.out_proj_post",
         prs.compute_attentions
     )
+    # its not seeing the mlps...
     
-    model.hook_manager.register(
-        "beit3.encoder.layer.not_moe.ffn.fc2_post",
-        prs.compute_mlps
-    )
+    # model.hook_manager.register(
+    #     "beit3.encoder.layer.not_moe.ffn.fc2_post",
+    #     prs.compute_mlps
+    # )
     
-    #MOE FFNs
-    model.hook_manager.register(
-        "beit3.encoder.layer.moe.expert.*.ffn.fc2_post",
-        prs.compute_mlps
-    )
+    # #MOE FFNs
+    # model.hook_manager.register(
+    #     "beit3.encoder.layer.moe.expert.*.ffn.fc2_post",
+    #     prs.compute_mlps
+    # )
     
     # what about layernorm in the forward embedding? ah nvm, its before self attn
     model.hook_manager.register(
