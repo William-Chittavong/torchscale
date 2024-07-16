@@ -73,7 +73,8 @@ class PRSLogger(object):
         return post_ln @ self.model.beit3.encoder.output_projection.detach().to(self.device)
 
     def _normalize_attentions(self):
-        len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]  # 2*l + 1
+        #len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]  # 2*l + 1
+        len_intermediates = self.attentions.shape[1] 
         normalization_term = (
             self.attentions.shape[2] * self.attentions.shape[3]
         )  # n * h
