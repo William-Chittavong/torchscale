@@ -128,7 +128,7 @@ class PRSLogger(object):
         # )
         norm = norm[:, np.newaxis, np.newaxis, np.newaxis]
         print(projected_attentions.shape, "proj attentions\n")
-        print(norm,"norm")
+        print(norm.shape,"norm")
         return projected_attentions/ norm
         
 
