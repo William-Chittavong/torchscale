@@ -76,7 +76,7 @@ class PRSLogger(object):
         #len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]  # 2*l + 1
         len_intermediates = self.attentions.shape[1] 
         normalization_term = (
-            self.attentions.shape[2] * self.attentions.shape[3]
+            self.attentions.shape[1] * self.attentions.shape[2]
         )  # n * h
         # This is just the normalization layer:
         mean_centered = self.attentions - self.post_ln_mean[
