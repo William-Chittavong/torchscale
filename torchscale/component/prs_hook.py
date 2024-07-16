@@ -28,6 +28,7 @@ class PRSLogger(object):
         self.current_layer += 1
         #return_value = ret[:, 0].detach().cpu() # cls token
         return_value = ret[:, 0, :].detach().cpu() # cls token
+        print(return_value.shape,"cls token shape of attn before stacking")
         self.attentions.append(
             return_value
             # + bias_term[np.newaxis, np.newaxis, np.newaxis].cpu()
@@ -109,7 +110,7 @@ class PRSLogger(object):
         self.attentions = torch.stack(self.attentions, axis=1).to(
             self.device
         )  # [b, l, n, h, d]
-        print(self.attentions.shape)
+        print(self.attentions.shape,"post stack attentions shape \n")
         #self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
         norm_attentions = self._normalize_attentions()
         #attentions = self._normalize_attentions()
