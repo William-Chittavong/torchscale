@@ -98,7 +98,7 @@ class PRSLogger(object):
         )
         
         post_ln = weighted_mean_by_std + bias_term
-        return post_ln @ self.model.beit3.encoder.output_projection.detach().to(self.device)
+        return post_ln @ self.model.beit3.encoder.output_projection.detach().to(self.device) # result should be B , N , C
 
     @torch.no_grad()
     def finalize(self):
@@ -107,13 +107,14 @@ class PRSLogger(object):
             self.device
         )  # [b, l, n, h, d]
         #self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
-        projected_attentions = self._normalize_attentions()
+        #projected_attentions = self._normalize_attentions()
+        attentions = self._normalize_attentions()
         #projected_mlps = self._normalize_mlps()
         
-        vision_cls_proj_attn = self.vision_head(projected_attentions)
+        #vision_cls_proj_attn = self.vision_head(projected_attentions)
         #vision_cls_proj_mlps = self.vision_head(projected_mlps)
         
-        attentions = F.normalize(vision_cls_proj_attn)
+        #attentions = F.normalize(vision_cls_proj_attn)
         #mlps = F.normalize(vision_cls_proj_mlps)
         
         # return(
