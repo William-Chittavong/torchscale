@@ -206,9 +206,11 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
                 visual_tokens=image, 
                 text_padding_position=None
             )
+            # temporarily leave out vision head since im using the output projection where dim wont work with vision head. 
             x = outputs["encoder_out"]
-            vision_cls = self.vision_head(x[:, 0, :])
-            vision_cls = F.normalize(vision_cls, dim=-1)
+            vision_cls = F.normalize(x, dim=-1)
+            # vision_cls = self.vision_head(x[:, 0, :])
+            # vision_cls = F.normalize(vision_cls, dim=-1)
         else:
             vision_cls = None
 
