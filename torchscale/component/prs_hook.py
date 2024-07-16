@@ -129,6 +129,7 @@ class PRSLogger(object):
         norm = norm[:, np.newaxis, np.newaxis, np.newaxis]
         print(projected_attentions.shape, "proj attentions\n")
         print(norm.shape,"norm")
+        projected_attentions = projected_attentions.permute(0, 2, 3, 4, 5, 1)
         return projected_attentions/ norm
         
 
