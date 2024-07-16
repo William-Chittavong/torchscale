@@ -109,6 +109,7 @@ class PRSLogger(object):
         self.attentions = torch.stack(self.attentions, axis=1).to(
             self.device
         )  # [b, l, n, h, d]
+        print(self.attentions.shape)
         #self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
         norm_attentions = self._normalize_attentions()
         #attentions = self._normalize_attentions()
