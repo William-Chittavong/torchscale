@@ -98,7 +98,9 @@ class PRSLogger(object):
         )
         
         post_ln = weighted_mean_by_std + bias_term
-        return post_ln @ self.model.beit3.encoder.output_projection.weight.T.to(self.device) +self.model.beit3.encoder.output_projection.bias.to(self.device)  # result should be B , N , C
+        print(post_ln.shape,"post ln shape\n")
+        print(self.model.beit3.encoder.output_projection)
+        return post_ln @ self.model.beit3.encoder.output_projection.to(self.device)  # result should be B , N , C
 
     @torch.no_grad()
     def finalize(self,rep):
