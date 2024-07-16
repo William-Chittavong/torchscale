@@ -111,10 +111,10 @@ class PRSLogger(object):
             self.device
         )  # [b, l, n, h, d]
         #self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
-        projected_attentions = self._normalize_attentions()
+        norm_attentions = self._normalize_attentions()
         #attentions = self._normalize_attentions()
         #projected_mlps = self._normalize_mlps()
-        
+        projected_attentions = self.model.vision_head(norm_attentions)
         norm = rep[0].norm(dim=-1).detach()
         
         #vision_cls_proj_attn = self.vision_head(projected_attentions)

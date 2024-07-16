@@ -28,7 +28,7 @@ from torchscale.architecture.config import EncoderConfig
 def trunc_normal_(tensor, mean=0., std=1.):
     __call_trunc_normal_(tensor, mean=mean, std=std, a=-std, b=std)
 
-# Made big modification: no_output_layer = False which means that the projection will be applied for the encoder_out. 
+
 
 def get_base_config(
         img_size=224, patch_size=16, drop_path_rate=0, 
@@ -36,7 +36,7 @@ def get_base_config(
 ):
     return EncoderConfig(
         img_size=img_size, patch_size=patch_size, vocab_size=vocab_size, multiway=True, 
-        layernorm_embedding=False, normalize_output=True, no_output_layer=False, 
+        layernorm_embedding=False, normalize_output=True, no_output_layer=True, 
         drop_path_rate=drop_path_rate, encoder_embed_dim=768, encoder_attention_heads=12, 
         encoder_ffn_embed_dim=int(768 * mlp_ratio), encoder_layers=12, 
         checkpoint_activations=checkpoint_activations, 
@@ -49,7 +49,7 @@ def get_large_config(
 ):
     return EncoderConfig(
         img_size=img_size, patch_size=patch_size, vocab_size=vocab_size, multiway=True, 
-        layernorm_embedding=False, normalize_output=True, no_output_layer=False, 
+        layernorm_embedding=False, normalize_output=True, no_output_layer=True, 
         drop_path_rate=drop_path_rate, encoder_embed_dim=1024, encoder_attention_heads=16, 
         encoder_ffn_embed_dim=int(1024 * mlp_ratio), encoder_layers=24, 
         checkpoint_activations=checkpoint_activations, 
