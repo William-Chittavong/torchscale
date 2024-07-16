@@ -23,14 +23,15 @@ class PRSLogger(object):
 
     @torch.no_grad()
     def compute_attentions(self, ret):
-        bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
+        #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
 
         self.current_layer += 1
-        return_value = ret[:, 0].detach().cpu()
+        #return_value = ret[:, 0].detach().cpu() # cls token
+        return_value = ret[:, 0, :].detach().cpu() # cls token
         self.attentions.append(
             return_value
-            + bias_term[np.newaxis, np.newaxis, np.newaxis].cpu()
-            / (return_value.shape[1] * return_value.shape[2])
+            # + bias_term[np.newaxis, np.newaxis, np.newaxis].cpu()
+            # / (return_value.shape[1] * return_value.shape[2])
         )  # [b, n, h, d]
         return ret
 
