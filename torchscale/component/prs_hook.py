@@ -115,7 +115,7 @@ class PRSLogger(object):
         #attentions = self._normalize_attentions()
         #projected_mlps = self._normalize_mlps()
         
-        norm = rep.norm(dim=-1).detach()
+        norm = rep[0].norm(dim=-1).detach()
         
         #vision_cls_proj_attn = self.vision_head(projected_attentions)
         #vision_cls_proj_mlps = self.vision_head(projected_mlps)
