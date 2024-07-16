@@ -26,14 +26,14 @@ class PRSLogger(object):
         #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
 
         self.current_layer += 1
-        #return_value = ret[:, 0].detach().cpu() # cls token
-        return_value = ret.detach().cpu() # cls token
+        return_value = ret[:, 0,:].detach().cpu() # cls token
+        #return_value = ret.detach().cpu() # cls token
         print(return_value.shape,"cls token shape of attn before stacking")
         self.attentions.append(
             return_value
             # + bias_term[np.newaxis, np.newaxis, np.newaxis].cpu()
             # / (return_value.shape[1] * return_value.shape[2])
-        )  # [b, n, h, d]
+        )  # [b, (h d) ]
         return ret
 
     @torch.no_grad()
