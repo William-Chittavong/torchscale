@@ -27,7 +27,7 @@ class PRSLogger(object):
 
         self.current_layer += 1
         #return_value = ret[:, 0].detach().cpu() # cls token
-        return_value = ret[:, 0].detach().cpu() # cls token
+        return_value = ret.detach().cpu() # cls token
         print(return_value.shape,"cls token shape of attn before stacking")
         self.attentions.append(
             return_value
