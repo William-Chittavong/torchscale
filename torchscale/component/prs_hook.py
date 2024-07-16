@@ -99,8 +99,7 @@ class PRSLogger(object):
         
         post_ln = weighted_mean_by_std + bias_term
         print(post_ln.shape,"post ln shape\n")
-        print(self.model.beit3.encoder.output_projection)
-        return self.model.beit3.encoder.output_projection(post_ln)
+        return post_ln
         #return post_ln @ self.model.beit3.encoder.output_projection.to(self.device)  # result should be B , N , C
         #TypeError: unsupported operand type(s) for @: 'Tensor' and 'Linear'
         
