@@ -38,18 +38,18 @@ class PRSLogger(object):
 
     @torch.no_grad()
     def compute_mlps(self, ret):
-        self.mlps.append(ret[:, 0].detach().cpu())  # [b, d]
+        self.mlps.append(ret[:, 0].detach().cpu()) 
         return ret
 
  
     @torch.no_grad()
     def log_post_ln_mean(self, ret):
-        self.post_ln_mean = ret.detach().cpu()  # [b, 1]
+        self.post_ln_mean = ret.detach().cpu()  
         return ret
 
     @torch.no_grad()
     def log_post_ln_std(self, ret):
-        self.post_ln_std = ret.detach().cpu()  # [b, 1]
+        self.post_ln_std = ret.detach().cpu()  
         return ret
 
 
@@ -89,7 +89,7 @@ class PRSLogger(object):
         )  # n * h
         # This is just the normalization layer:
         mean_centered = self.attentions - self.post_ln_mean[
-            :, :, np.newaxis
+            :, 0, np.newaxis
         ].to(self.device) / (len_intermediates * normalization_term)
         
         weighted_mean_centered = (
@@ -97,7 +97,7 @@ class PRSLogger(object):
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
-            :, :, np.newaxis
+            :, 0, np.newaxis
         ].to(self.device)
         
         
@@ -135,10 +135,10 @@ class PRSLogger(object):
         # return(
         #     attentions,mlps
         # )
-        norm = norm[:, np.newaxis, np.newaxis, np.newaxis]
+        norm = norm[:, np.newaxis, np.newaxis]
         print(projected_attentions.shape, "proj attentions\n")
         print(norm.shape,"norm")
-        norm = norm.permute(1, 0, 2, 3)
+        #norm = norm.permute(1, 0, 2, 3)
         return projected_attentions/ norm
         
 
