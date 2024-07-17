@@ -55,11 +55,13 @@ class PRSLogger(object):
 
     def _normalize_mlps(self):
         len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]
+
         # This is just the normalization layer:
         mean_centered = (
             self.mlps
             - self.post_ln_mean[:, :, np.newaxis].to(self.device) / len_intermediates
         )
+        
         weighted_mean_centered = (
             self.model.beit3.encoder.layer_norm.B.weight.detach().to(self.device) * mean_centered
 
@@ -127,10 +129,10 @@ class PRSLogger(object):
         # return(
         #     attentions,mlps
         # )
-        norm = norm[:, np.newaxis, np.newaxis]
+        norm = norm[:, np.newaxis, np.newaxis, np.newaxis]
         print(projected_attentions.shape, "proj attentions\n")
         print(norm.shape,"norm")
-        projected_attentions = projected_attentions.permute(0, 2, 3, 1)
+        norm = norm.permute(1, 0, 2, 3)
         return projected_attentions/ norm
         
 

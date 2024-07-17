@@ -418,7 +418,8 @@ class Encoder(nn.Module):
             x = self.layer_norm(x)
 
         if not features_only and self.output_projection is not None:
-            # seems like i can log this as well. although this is just the encoder_out. 
+            # set to none for retrieval model since in if condition to set the output_projection, 
+            # the no_output_layer = true in the configs as well as the vocab size = -1.  
             x = self.output_projection(x)
 
         return {
