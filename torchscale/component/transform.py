@@ -9,7 +9,7 @@ import torchvision.transforms.functional as F
 from torchvision.transforms import Normalize, Compose, RandomResizedCrop, InterpolationMode, ToTensor, Resize, \
     CenterCrop
 
-from utils.constants import OPENAI_DATASET_MEAN, OPENAI_DATASET_STD
+from .constants import OPENAI_DATASET_MEAN, OPENAI_DATASET_STD
 
 from torchvision import transforms
 from PIL import Image
