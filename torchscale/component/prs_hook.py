@@ -156,21 +156,24 @@ def hook_prs_logger(model, embed_dim,device):
     )
     # its not seeing the mlps...
     
+    # model.hook_manager.register(
+    #     "beit3.encoder.layer.*.not_moe.ffn.fc2_post",
+    #     prs.compute_mlps
+    # )
+    
+    # #MOE FFNs
+    # model.hook_manager.register(
+    #     "beit3.encoder.layer.*.moe.expert.*.ffn.fc2_post",
+    #     prs.compute_mlps
+    # )
     model.hook_manager.register(
-        "beit3.encoder.layer.*.not_moe.ffn.fc2_post",
+        "beit3.encoder.layer.*.ffn.fc2_post",
         prs.compute_mlps
     )
-    
-    #MOE FFNs
-    model.hook_manager.register(
-        "beit3.encoder.layer.*.moe.expert.*.ffn.fc2_post",
-        prs.compute_mlps
-    )
-    
     # what about layernorm in the forward embedding? ah nvm, its before self attn
-    model.hook_manager.register(
-        "beit3.encoder.layer.0.self_attn_layer_norm.*.ln_post", prs.compute_mlps
-    )
+    # model.hook_manager.register(
+    #     "beit3.encoder.layer.0.self_attn_layer_norm.*.ln_post", prs.compute_mlps
+    # )
 
     #after final layer's layer norm. 
     model.hook_manager.register(
