@@ -39,7 +39,7 @@ def get_args_parser():
     
     parser.add_argument("model_size",default = "base",help = "model size",type = str)
     
-    parser.add_argument()
+
     
     
     # Dataset parameters
