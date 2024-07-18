@@ -38,7 +38,7 @@ class PRSLogger(object):
 
     @torch.no_grad()
     def compute_mlps(self, ret):
-        self.mlps.append(ret[:, 0].detach().cpu()) 
+        self.mlps.append(ret[:, 0,:].detach().cpu()) 
         return ret
 
  
@@ -58,8 +58,9 @@ class PRSLogger(object):
 
         # This is just the normalization layer:
         mean_centered = (
-            self.mlps
-            - self.post_ln_mean[:, :, np.newaxis].to(self.device) / len_intermediates
+            self.mlps - self.post_ln_mean[
+            :, 0, np.newaxis
+        ].to(self.device) / len_intermediates
         )
         
         weighted_mean_centered = (
@@ -67,23 +68,23 @@ class PRSLogger(object):
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
-            :, :, np.newaxis, np.newaxis, np.newaxis
+            :, 0, np.newaxis
         ].to(self.device)
         bias_term = self.model.beit3.encoder.layer_norm.B.bias.detach().to(self.device) / (
             len_intermediates 
         )
         post_ln = weighted_mean_by_std + bias_term
-        return post_ln @ self.model.beit3.encoder.output_projection.to(self.device)
+        return post_ln 
 
     def _normalize_attentions(self):
-        #len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]  # 2*l + 1
+        len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]  # 2*l + 1
         
         # print("self.attentions shape:\n", self.attentions.shape)
         # print("self.post_ln_mean shape:\n", self.post_ln_mean.shape)
         # print("self.post_ln_std shape:\n", self.post_ln_std.shape)
         # print("layer_norm.B.weight shape:\n", self.model.beit3.encoder.layer_norm.B.weight.shape)
         # print("layer_norm.B.bias shape:\n", self.model.beit3.encoder.layer_norm.B.bias.shape)
-        len_intermediates = self.attentions.shape[1] 
+        #len_intermediates = self.attentions.shape[1] 
         normalization_term = (
             self.attentions.shape[1] * self.attentions.shape[2]
         )  # n * h
@@ -119,28 +120,19 @@ class PRSLogger(object):
             self.device
         )  # [b, l, n, h, d]
         # print(self.attentions.shape,"post stack attentions shape \n")
-        #self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
+        self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
         norm_attentions = self._normalize_attentions()
         #attentions = self._normalize_attentions()
-        #projected_mlps = self._normalize_mlps()
+        norm_mlps = self._normalize_mlps()
         projected_attentions = self.model.vision_head(norm_attentions)
+        projected_mlps = self.model.vision_head(norm_mlps)
         norm = rep.norm(dim=-1).detach()
         # print(norm.shape, "norm before new axis \n")
         
-        #vision_cls_proj_attn = self.vision_head(projected_attentions)
-        #vision_cls_proj_mlps = self.vision_head(projected_mlps)
-        
-        #attentions = F.normalize(vision_cls_proj_attn)
-        #mlps = F.normalize(vision_cls_proj_mlps)
-        
-        # return(
-        #     attentions,mlps
-        # )
+       
         norm = norm[:, np.newaxis, np.newaxis]
-        # print(projected_attentions.shape, "proj attentions\n")
-        # print(norm.shape,"norm")
-        #norm = norm.permute(1, 0, 2, 3)
-        return projected_attentions/ norm
+        
+        return projected_attentions/norm , projected_mlps/norm
         
 
     def reinit(self):
@@ -161,16 +153,16 @@ def hook_prs_logger(model, embed_dim,device):
     )
     # its not seeing the mlps...
     
-    # model.hook_manager.register(
-    #     "beit3.encoder.layer.not_moe.ffn.fc2_post",
-    #     prs.compute_mlps
-    # )
+    model.hook_manager.register(
+        "beit3.encoder.layer.*.not_moe.ffn.fc2_post",
+        prs.compute_mlps
+    )
     
-    # #MOE FFNs
-    # model.hook_manager.register(
-    #     "beit3.encoder.layer.moe.expert.*.ffn.fc2_post",
-    #     prs.compute_mlps
-    # )
+    #MOE FFNs
+    model.hook_manager.register(
+        "beit3.encoder.layer.*.moe.expert.*.ffn.fc2_post",
+        prs.compute_mlps
+    )
     
     # what about layernorm in the forward embedding? ah nvm, its before self attn
     model.hook_manager.register(
