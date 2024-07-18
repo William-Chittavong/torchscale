@@ -124,14 +124,16 @@ class PRSLogger(object):
         norm_attentions = self._normalize_attentions()
         #attentions = self._normalize_attentions()
         norm_mlps = self._normalize_mlps()
+        print("norm mlps \n ", norm_mlps.shape)
         projected_attentions = self.model.vision_head(norm_attentions)
         projected_mlps = self.model.vision_head(norm_mlps)
+        print("projected mlps \n ", projected_mlps.shape)
         norm = rep.norm(dim=-1).detach()
         # print(norm.shape, "norm before new axis \n")
         
        
         norm = norm[:, np.newaxis, np.newaxis]
-        
+        print("proj mlps / norm \n", (projected_mlps/norm).shape)
         return (projected_attentions/norm / projected_mlps/norm ) 
         
 
