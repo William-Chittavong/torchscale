@@ -199,7 +199,7 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
         )
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
-    def forward(self, image=None, text_description=None, padding_mask=None, only_infer=False, **kwargs):
+    def forward(self, image=None, text_description=None, padding_mask=None, normalize = True,only_infer=False, **kwargs):
         if image is not None:
             outputs = self.beit3(
                 textual_tokens=None, 
@@ -207,9 +207,10 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
                 text_padding_position=None
             )
             x = outputs["encoder_out"]
-
+            
             vision_cls = self.vision_head(x[:, 0, :])
-            vision_cls = F.normalize(vision_cls, dim=-1)
+            if normalize: 
+                vision_cls = F.normalize(vision_cls, dim=-1)
         else:
             vision_cls = None
 
