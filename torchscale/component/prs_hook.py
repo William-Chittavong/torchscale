@@ -132,7 +132,7 @@ class PRSLogger(object):
        
         norm = norm[:, np.newaxis, np.newaxis]
         
-        return (projected_attentions/norm , projected_mlps/norm ) 
+        return (projected_attentions/norm / projected_mlps/norm ) 
         
 
     def reinit(self):
