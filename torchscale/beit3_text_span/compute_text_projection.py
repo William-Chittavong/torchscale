@@ -111,7 +111,7 @@ def main(args):
         'binary_waterbirds': waterbird_classes, 
         'cub': cub_classes}[args.dataset]
     classifier = zero_shot_classifier(model, tokenizer, classes, OPENAI_IMAGENET_TEMPLATES, args.device)
-    with open(os.path.join(args.output_dir, f'{args.dataset}_classifier_{args.model}.npy'), 'wb') as f:
+    with open(os.path.join(args.output_dir, f'{args.dataset}_classifier_retrieval.npy'), 'wb') as f:
         np.save(f, classifier.detach().cpu().numpy())
     
 
