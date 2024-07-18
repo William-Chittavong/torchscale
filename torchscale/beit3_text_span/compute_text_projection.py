@@ -81,7 +81,7 @@ def zero_shot_classifier(model, tokenizer, classnames, templates,
         zeroshot_weights = []
         for classname in tqdm.tqdm(classnames):
             texts = [template.format(c=classname) if use_format else template(classname) for template in templates]
-            texts = tokenizer(texts, return_tensors='pt').to(device)  # tokenize
+            texts = tokenizer(texts, return_tensors='pt',padding=True, truncation=True).to(device)  # tokenize
             class_embeddings = model(text_description = texts , only_infer = True)
             class_embedding = F.normalize(class_embeddings, dim=-1).mean(dim=0) # [768] , d 
             class_embedding /= class_embedding.norm()
