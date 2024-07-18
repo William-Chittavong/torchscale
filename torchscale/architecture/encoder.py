@@ -65,7 +65,7 @@ class EncoderLayer(nn.Module):
                 self.build_ffn(
                     self.embed_dim,
                     self.args,
-                    self.hook,
+                    hook = hook,
                 ),
             )
         else:
@@ -88,7 +88,7 @@ class EncoderLayer(nn.Module):
                     args.moe_eval_capacity_token_fraction,
                     use_xmoe=args.use_xmoe,
                 )
-            experts = make_experts(args, self.embed_dim, self.ffn_dim,self.hook)
+            experts = make_experts(args, self.embed_dim, self.ffn_dim,hook)
             self.moe_layer = MOELayer(gate, experts, args)
         self.final_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
 

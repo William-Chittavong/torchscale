@@ -74,7 +74,8 @@ def make_experts(args, embed_dim, expert_ffn_dim,hook):
                         args.dropout,
                         args.activation_dropout,
                         args.layernorm_eps,
-                        args.subln
+                        args.subln,
+                        hook = hook.fork("ffn")
                     )
                 )
     else:
@@ -93,12 +94,13 @@ def make_experts(args, embed_dim, expert_ffn_dim,hook):
                     args.dropout,
                     args.activation_dropout,
                     args.layernorm_eps,
-                    args.subln
+                    args.subln,
+                    hook = hook.fork("ffn")
                 )
             )
-    # fork for each FFN in the MOE layer for each mlp output. 
-    for i, expert in enumerate(expert_list):
-        expert.hook = hook.fork(f"expert.{i}")
+    # # fork for each FFN in the MOE layer for each mlp output. 
+    # for i, expert in enumerate(expert_list):
+    #     expert.hook = hook.fork(f"expert.{i}")
 
     experts = nn.ModuleList(expert_list)
     return experts
