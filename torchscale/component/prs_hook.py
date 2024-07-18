@@ -28,7 +28,7 @@ class PRSLogger(object):
         self.current_layer += 1
         return_value = ret[:, 0,:].detach().cpu() # cls token
         #return_value = ret.detach().cpu() # cls token
-        print(return_value.shape,"cls token shape of attn before stacking")
+        #print(return_value.shape,"cls token shape of attn before stacking")
         self.attentions.append(
             return_value
             # + bias_term[np.newaxis, np.newaxis, np.newaxis].cpu()
@@ -118,14 +118,14 @@ class PRSLogger(object):
         self.attentions = torch.stack(self.attentions, axis=1).to(
             self.device
         )  # [b, l, n, h, d]
-        print(self.attentions.shape,"post stack attentions shape \n")
+        # print(self.attentions.shape,"post stack attentions shape \n")
         #self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
         norm_attentions = self._normalize_attentions()
         #attentions = self._normalize_attentions()
         #projected_mlps = self._normalize_mlps()
         projected_attentions = self.model.vision_head(norm_attentions)
         norm = rep.norm(dim=-1).detach()
-        print(norm.shape, "norm before new axis \n")
+        # print(norm.shape, "norm before new axis \n")
         
         #vision_cls_proj_attn = self.vision_head(projected_attentions)
         #vision_cls_proj_mlps = self.vision_head(projected_mlps)
@@ -137,8 +137,8 @@ class PRSLogger(object):
         #     attentions,mlps
         # )
         norm = norm[:, np.newaxis, np.newaxis]
-        print(projected_attentions.shape, "proj attentions\n")
-        print(norm.shape,"norm")
+        # print(projected_attentions.shape, "proj attentions\n")
+        # print(norm.shape,"norm")
         #norm = norm.permute(1, 0, 2, 3)
         return projected_attentions/ norm
         
