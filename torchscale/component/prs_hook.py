@@ -38,7 +38,7 @@ class PRSLogger(object):
 
     @torch.no_grad()
     def compute_mlps(self, ret):
-        self.mlps.append(ret[:, 0].detach().cpu()) 
+        self.mlps.append(ret.detach().cpu()) 
         return ret
 
  
