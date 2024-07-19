@@ -4,16 +4,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-
-
-# try:
-#     from .fused_norm import FusedLayerNorm as LayerNorm
-# except ModuleNotFoundError:
-#     from .layer_norm import LayerNorm
-    
-from .layer_norm import LayerNorm    
-
+try:
+    from apex.normalization import FusedLayerNorm as LayerNorm
+except ModuleNotFoundError:
+    from torch.nn import LayerNorm
 
 
 from .xmoe.global_groups import get_moe_group
@@ -71,7 +65,7 @@ def make_experts(args, embed_dim, expert_ffn_dim):
                         args.dropout,
                         args.activation_dropout,
                         args.layernorm_eps,
-                        args.subln
+                        args.subln,
                     )
                 )
     else:
@@ -90,10 +84,9 @@ def make_experts(args, embed_dim, expert_ffn_dim):
                     args.dropout,
                     args.activation_dropout,
                     args.layernorm_eps,
-                    args.subln
+                    args.subln,
                 )
             )
-
     experts = nn.ModuleList(expert_list)
     return experts
 
@@ -143,9 +136,7 @@ class FeedForwardNetwork(nn.Module):
         x = self.activation_dropout_module(x)
         if self.ffn_layernorm is not None:
             x = self.ffn_layernorm(x)
-
-        x = self.fc2(x) 
-        
+        x = self.fc2(x)
         x = x.view(x_shape)
         x = self.dropout_module(x)
         return x
