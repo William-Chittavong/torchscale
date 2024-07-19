@@ -60,8 +60,8 @@ class EncoderLayer(nn.Module):
                 args,
                 self.build_ffn(
                     self.embed_dim,
-                    self.args ,
-                ) ,
+                    self.args 
+                ),
             )
         else:
             assert not self.args.multiway
