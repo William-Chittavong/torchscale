@@ -33,18 +33,14 @@ from torchscale.component.layer_norm import LayerNorm
 
 
 
-
 class EncoderLayer(nn.Module):
-    def __init__(self, args, depth, is_moe_layer=False, is_encoder_decoder=False,hook: Optional[HookManager] = None):
+    def __init__(self, args, depth, is_moe_layer=False, is_encoder_decoder=False , hook: Optional[HookManager] = None):
         super().__init__()
         self.hook = hook or HookManager()
         self.args = args
         self.embed_dim = args.encoder_embed_dim
-        self.self_attn = self.build_self_attention(self.embed_dim, args,hook = hook)
-
-        # do i need to use self_attn_layer_norm.B to access the mean and var? or just ignore the B? 
-        self.self_attn_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps = args.layernorm_eps))
-        
+        self.self_attn = self.build_self_attention(self.embed_dim, args , hook=hook)
+        self.self_attn_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
         self.dropout_module = torch.nn.Dropout(args.dropout)
 
         if args.drop_path_rate > 0:
@@ -112,10 +108,10 @@ class EncoderLayer(nn.Module):
             args.dropout,
             args.activation_dropout,
             args.layernorm_eps,
-            args.subln
+            args.subln,
         )
 
-    def build_self_attention(self, embed_dim, args,hook):
+    def build_self_attention(self, embed_dim, args , hook):
         return MultiheadAttention(
             args,
             embed_dim,
@@ -139,8 +135,8 @@ class EncoderLayer(nn.Module):
             attn_mask = attn_mask.masked_fill(attn_mask.to(torch.bool), -1e8)
 
         residual = x
-        if self.normalize_before: #this seems to be true since sub_ln is true.
-            x = self.self_attn_layer_norm(x) # norm before the self attn layer
+        if self.normalize_before:
+            x = self.self_attn_layer_norm(x)
         x, _ = self.self_attn(
             query=x,
             key=x,
@@ -177,6 +173,8 @@ class EncoderLayer(nn.Module):
         if not self.normalize_before:
             x = self.final_layer_norm(x)
         return x, l_aux
+
+
 
 
 class Encoder(nn.Module):
