@@ -11,10 +11,11 @@ from pathlib import Path
 import torch.nn.functional as F
 
 class PRSLogger(object):
-    def __init__(self, model,device):
+    def __init__(self, model,device , spatial:bool = True):
         self.current_layer = 0
         self.device = device
         self.attentions = []
+        self.spatial = spatial
         self.ffn = []
         self.post_ln_std = None
         self.post_ln_mean = None
@@ -90,8 +91,44 @@ class PRSLogger(object):
         )
         post_ln = weighted_mean_by_std + bias_term
         return post_ln 
+    
+    def _normalize_attentions_spatial(self):
+        len_intermediates = self.attentions.shape[1] + self.ffn.shape[1]  # 2*l + 1
+        
+        # print("self.attentions shape:\n", self.attentions.shape)
+        # print("self.post_ln_mean shape:\n", self.post_ln_mean.shape)
+        # print("self.post_ln_std shape:\n", self.post_ln_std.shape)
+        # print("layer_norm.B.weight shape:\n", self.model.beit3.encoder.layer_norm.B.weight.shape)
+        # print("layer_norm.B.bias shape:\n", self.model.beit3.encoder.layer_norm.B.bias.shape)
+        #len_intermediates = self.attentions.shape[1] 
+        normalization_term = (
+            self.attentions.shape[1] * self.attentions.shape[2]
+        )  # n * h
+        # This is just the normalization layer:
+        mean_centered = self.attentions - self.post_ln_mean[
+            :, 0, np.newaxis , np.newaxis
+        ].to(self.device) / (len_intermediates * normalization_term)
+        
+        weighted_mean_centered = (
+            self.model.beit3.encoder.layer_norm.B.weight.detach().to(self.device) * mean_centered
 
-    def _normalize_attentions(self):
+        )
+        weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
+            :, 0, np.newaxis , np.newaxis
+        ].to(self.device)
+        
+        
+        
+        bias_term = self.model.beit3.encoder.layer_norm.B.bias.detach().to(self.device) / (
+            len_intermediates * normalization_term
+        )
+        
+        post_ln = weighted_mean_by_std + bias_term
+        #print(post_ln.shape,"post ln shape\n")
+        return post_ln
+      
+
+    def _normalize_attentions_non_spatial(self):
         len_intermediates = self.attentions.shape[1] + self.ffn.shape[1]  # 2*l + 1
         
         # print("self.attentions shape:\n", self.attentions.shape)
@@ -126,7 +163,7 @@ class PRSLogger(object):
         #print(post_ln.shape,"post ln shape\n")
         return post_ln
         #return post_ln @ self.model.beit3.encoder.output_projection.to(self.device)  # result should be B , N , C
-        #TypeError: unsupported operand type(s) for @: 'Tensor' and 'Linear'
+
         
     @torch.no_grad()
     def finalize(self,rep):
@@ -136,7 +173,11 @@ class PRSLogger(object):
         )  # [b, l, n, h, d]
         # print(self.attentions.shape,"post stack attentions shape \n")
         self.ffn = torch.stack(self.ffn, axis=1).to(self.device)  # [b, l + 1, d]
-        norm_attentions = self._normalize_attentions()
+        
+        if self.spatial:
+            norm_attentions = self._normalize_attentions_spatial
+        else:
+            norm_attentions = self._normalize_attentions_non_spatial
         #attentions = self._normalize_attentions()
         norm_ffn = self._normalize_ffn()
         print("norm ffn \n ", norm_ffn.shape)
@@ -146,7 +187,17 @@ class PRSLogger(object):
         norm = rep.norm(dim=-1).detach()
         # print(norm.shape, "norm before new axis \n")
         
-       
+        if self.spatial:
+            return (
+                projected_attentions
+                / norm[:, np.newaxis, np.newaxis, np.newaxis], 
+                projected_ffn / norm[:, np.newaxis, np.newaxis], 
+            ) 
+        return (
+            projected_attentions
+            / norm[:, np.newaxis, np.newaxis], 
+            projected_ffn / norm[:, np.newaxis, np.newaxis], 
+        ) 
         norm = norm[:, np.newaxis, np.newaxis]
         print("proj ffn / norm \n", (projected_ffn/norm).shape)
         return (projected_attentions/norm / projected_ffn/norm ) 
@@ -174,7 +225,12 @@ def hook_prs_logger(model, device , spatial: bool = True):
             "beit3.encoder.layer.*.self_attn.out_proj_post",
         prs.compute_attentions_non_spatial
         ) 
-       
+    model.hook_manager.register(
+        "beit3.encoder.layer.*.moe" , prs.compute_ffn
+    )
+    model.hook_manager.register(
+        "beit3.encoder.layer.*.not_moe" , prs.compute_ffn
+    )
     # what about layernorm in the forward embedding? ah nvm, its before self attn
     # model.hook_manager.register(
     #     "beit3.encoder.layer.0.self_attn_layer_norm.*.ln_post", prs.compute_ffn
