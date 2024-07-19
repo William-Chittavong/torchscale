@@ -104,7 +104,7 @@ class EncoderLayer(nn.Module):
         else:
             self.alpha = 1.0
 
-    def build_ffn(self, embed_dim, args,hook):
+    def build_ffn(self, embed_dim, args):
         return FeedForwardNetwork(
             embed_dim,
             self.ffn_dim,
