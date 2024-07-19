@@ -60,7 +60,8 @@ class EncoderLayer(nn.Module):
                 args,
                 self.build_ffn(
                     self.embed_dim,
-                    self.args 
+                    self.args,
+                    ffn_dim = self.ffn_dim
                 ),
             )
         else:
@@ -100,10 +101,10 @@ class EncoderLayer(nn.Module):
         else:
             self.alpha = 1.0
 
-    def build_ffn(self, embed_dim, args):
+    def build_ffn(embed_dim, args , ffn_dim):
         return FeedForwardNetwork(
             embed_dim,
-            self.ffn_dim,
+            ffn_dim,
             args.activation_fn,
             args.dropout,
             args.activation_dropout,
