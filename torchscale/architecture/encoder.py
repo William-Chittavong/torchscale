@@ -64,8 +64,7 @@ class EncoderLayer(nn.Module):
                 args,
                 self.build_ffn(
                     self.embed_dim,
-                    self.args,
-                    hook = hook,
+                    self.args
                 ),
             )
         else:
@@ -88,7 +87,7 @@ class EncoderLayer(nn.Module):
                     args.moe_eval_capacity_token_fraction,
                     use_xmoe=args.use_xmoe,
                 )
-            experts = make_experts(args, self.embed_dim, self.ffn_dim,hook)
+            experts = make_experts(args, self.embed_dim, self.ffn_dim)
             self.moe_layer = MOELayer(gate, experts, args)
         self.final_layer_norm = MultiwayWrapper(args, LayerNorm(self.embed_dim, eps=args.layernorm_eps))
 
@@ -113,8 +112,7 @@ class EncoderLayer(nn.Module):
             args.dropout,
             args.activation_dropout,
             args.layernorm_eps,
-            args.subln,
-            hook = hook.fork("ffn"),
+            args.subln
         )
 
     def build_self_attention(self, embed_dim, args,hook):
@@ -165,12 +163,12 @@ class EncoderLayer(nn.Module):
         if self.normalize_before:
             x = self.final_layer_norm(x)
         if not self.is_moe_layer:
-            x = self.ffn(x)
+            x = self.hook("not_moe" , ret = self.ffn(x)) 
             l_aux = None
         else:
             x = x.transpose(0, 1)
             x, l_aux = self.moe_layer(x)
-            x = x.transpose(0, 1)
+            x = self.hook("moe" , ret = x.transpose(0, 1)) 
 
         if self.drop_path is not None:
             x = self.drop_path(x)

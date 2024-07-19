@@ -18,9 +18,6 @@ from .layer_norm import LayerNorm
 
 from .xmoe.global_groups import get_moe_group
 
-from .hook import HookManager
-from typing import Optional
-
 
 class set_torch_seed(object):
     def __init__(self, seed):
@@ -49,7 +46,7 @@ class set_torch_seed(object):
         self.set_rng_state(self.rng_state)
 
 
-def make_experts(args, embed_dim, expert_ffn_dim,hook):
+def make_experts(args, embed_dim, expert_ffn_dim):
     world_size = (
         1
         if not torch.distributed.is_initialized()
@@ -74,8 +71,7 @@ def make_experts(args, embed_dim, expert_ffn_dim,hook):
                         args.dropout,
                         args.activation_dropout,
                         args.layernorm_eps,
-                        args.subln,
-                        hook = hook.fork("ffn")
+                        args.subln
                     )
                 )
     else:
@@ -94,13 +90,9 @@ def make_experts(args, embed_dim, expert_ffn_dim,hook):
                     args.dropout,
                     args.activation_dropout,
                     args.layernorm_eps,
-                    args.subln,
-                    hook = hook.fork("ffn")
+                    args.subln
                 )
             )
-    # # fork for each FFN in the MOE layer for each mlp output. 
-    # for i, expert in enumerate(expert_list):
-    #     expert.hook = hook.fork(f"expert.{i}")
 
     experts = nn.ModuleList(expert_list)
     return experts
@@ -127,10 +119,8 @@ class FeedForwardNetwork(nn.Module):
         activation_dropout,
         layernorm_eps,
         subln=False,
-        hook: Optional[HookManager] = None
     ):
         super().__init__()
-        self.hook = hook or HookManager()
         self.embed_dim = embed_dim
         self.activation_fn = get_activation_fn(activation=str(activation_fn))
         self.activation_dropout_module = torch.nn.Dropout(activation_dropout)
@@ -154,9 +144,8 @@ class FeedForwardNetwork(nn.Module):
         if self.ffn_layernorm is not None:
             x = self.ffn_layernorm(x)
 
-        x = self.hook("fc2_post",ret = self.fc2(x)) #MLP
+        x = self.fc2(x) 
         
         x = x.view(x_shape)
         x = self.dropout_module(x)
-        self.hook.finalize()
         return x

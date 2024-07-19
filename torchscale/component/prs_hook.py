@@ -11,22 +11,35 @@ from pathlib import Path
 import torch.nn.functional as F
 
 class PRSLogger(object):
-    def __init__(self, model, embed_dim,device):
+    def __init__(self, model,device):
         self.current_layer = 0
         self.device = device
         self.attentions = []
-        self.mlps = []
+        self.ffn = []
         self.post_ln_std = None
         self.post_ln_mean = None
         self.model = model
-        self.vision_head = torch.nn.Linear(embed_dim, embed_dim, bias=False)
+    
 
     @torch.no_grad()
-    def compute_attentions(self, ret):
+    def compute_attentions_spatial(self, ret):
         #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
 
         self.current_layer += 1
-        return_value = ret[:, 0,:].detach().cpu() # cls token
+        return_value = ret.detach().cpu() # # [b , l , (h ,d)]
+       
+        self.attentions.append(
+            return_value
+           
+        ) 
+        return ret
+    
+    @torch.no_grad()
+    def compute_attentions_non_spatial(self, ret):
+        #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
+
+        self.current_layer += 1
+        return_value = ret[:, 0,:].detach().cpu() # cls token # [b , (h ,d)]
         #return_value = ret.detach().cpu() # cls token
         #print(return_value.shape,"cls token shape of attn before stacking")
         self.attentions.append(
@@ -36,10 +49,11 @@ class PRSLogger(object):
         )  # [b, (h d) ]
         return ret
 
+
     @torch.no_grad()
-    def compute_mlps(self, ret):
-        print("mlps rep shape \n",ret.shape)
-        self.mlps.append(ret.detach().cpu()) 
+    def compute_ffn(self, ret):
+        print("ffn rep shape \n",ret.shape)
+        self.ffn.append(ret[:, 0,:].detach().cpu()) # b,(h d)
         return ret
 
  
@@ -54,12 +68,12 @@ class PRSLogger(object):
         return ret
 
 
-    def _normalize_mlps(self):
-        len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]
+    def _normalize_ffn(self):
+        len_intermediates = self.attentions.shape[1] + self.ffn.shape[1]
 
         # This is just the normalization layer:
         mean_centered = (
-            self.mlps - self.post_ln_mean[
+            self.ffn - self.post_ln_mean[
             :, 0, np.newaxis
         ].to(self.device) / len_intermediates
         )
@@ -78,7 +92,7 @@ class PRSLogger(object):
         return post_ln 
 
     def _normalize_attentions(self):
-        len_intermediates = self.attentions.shape[1] + self.mlps.shape[1]  # 2*l + 1
+        len_intermediates = self.attentions.shape[1] + self.ffn.shape[1]  # 2*l + 1
         
         # print("self.attentions shape:\n", self.attentions.shape)
         # print("self.post_ln_mean shape:\n", self.post_ln_mean.shape)
@@ -121,58 +135,49 @@ class PRSLogger(object):
             self.device
         )  # [b, l, n, h, d]
         # print(self.attentions.shape,"post stack attentions shape \n")
-        self.mlps = torch.stack(self.mlps, axis=1).to(self.device)  # [b, l + 1, d]
+        self.ffn = torch.stack(self.ffn, axis=1).to(self.device)  # [b, l + 1, d]
         norm_attentions = self._normalize_attentions()
         #attentions = self._normalize_attentions()
-        norm_mlps = self._normalize_mlps()
-        print("norm mlps \n ", norm_mlps.shape)
+        norm_ffn = self._normalize_ffn()
+        print("norm ffn \n ", norm_ffn.shape)
         projected_attentions = self.model.vision_head(norm_attentions)
-        projected_mlps = self.model.vision_head(norm_mlps)
-        print("projected mlps \n ", projected_mlps.shape)
+        projected_ffn = self.model.vision_head(norm_ffn)
+        print("projected ffn \n ", projected_ffn.shape)
         norm = rep.norm(dim=-1).detach()
         # print(norm.shape, "norm before new axis \n")
         
        
         norm = norm[:, np.newaxis, np.newaxis]
-        print("proj mlps / norm \n", (projected_mlps/norm).shape)
-        return (projected_attentions/norm / projected_mlps/norm ) 
+        print("proj ffn / norm \n", (projected_ffn/norm).shape)
+        return (projected_attentions/norm / projected_ffn/norm ) 
         
 
     def reinit(self):
         self.current_layer = 0
         self.attentions = []
-        self.mlps = []
+        self.ffn = []
         self.post_ln_mean = None
         self.post_ln_std = None
         torch.cuda.empty_cache()
 
-def hook_prs_logger(model, embed_dim,device):
+def hook_prs_logger(model, device , spatial: bool = True):
     """Hooks a projected residual stream logger to the model."""
-    prs = PRSLogger(model, embed_dim,device)
     
-    model.hook_manager.register(
+    prs = PRSLogger( model, device , spatial = spatial)
+    if spatial:
+        model.hook_manager.register(
             "beit3.encoder.layer.*.self_attn.out_proj_post",
-        prs.compute_attentions
-    )
-    # its not seeing the mlps...
-    
-    # model.hook_manager.register(
-    #     "beit3.encoder.layer.*.not_moe.ffn.fc2_post",
-    #     prs.compute_mlps
-    # )
-    
-    # #MOE FFNs
-    # model.hook_manager.register(
-    #     "beit3.encoder.layer.*.moe.expert.*.ffn.fc2_post",
-    #     prs.compute_mlps
-    # )
-    model.hook_manager.register(
-        "beit3.encoder.layer.*.ffn.fc2_post",
-        prs.compute_mlps
-    )
+        prs.compute_attentions_spatial
+        )
+    else:
+        model.hook_manager.register(
+            "beit3.encoder.layer.*.self_attn.out_proj_post",
+        prs.compute_attentions_non_spatial
+        ) 
+       
     # what about layernorm in the forward embedding? ah nvm, its before self attn
     # model.hook_manager.register(
-    #     "beit3.encoder.layer.0.self_attn_layer_norm.*.ln_post", prs.compute_mlps
+    #     "beit3.encoder.layer.0.self_attn_layer_norm.*.ln_post", prs.compute_ffn
     # )
 
     #after final layer's layer norm. 
@@ -188,3 +193,13 @@ def hook_prs_logger(model, embed_dim,device):
     
   
     return prs
+
+
+# idea: just log the output after the self_attn_layer norm
+# as well as the output of ffn or moe layer. for clip, the just log the output of the mlp layer anyway.
+# after the ffn are taken care of,
+# edit the compute prs to match what was done in the demo file
+
+# then edit whatever in the ablations file
+
+# finally edit the text span file.  
