@@ -82,8 +82,8 @@ def zero_shot_classifier(model, tokenizer, classnames, templates,
         for classname in tqdm.tqdm(classnames):
             texts = [template.format(c=classname) if use_format else template(classname) for template in templates]
             texts = tokenizer(texts, return_tensors='pt',padding=True, truncation=True).to(device)  # tokenize
-            _ ,class_embeddings = model(text_description = texts["input_ids"] , only_infer = True)
-            class_embedding = F.normalize(class_embeddings, dim=-1).mean(dim=0) # [768] , d 
+            _ ,class_embeddings = model(text_description = texts["input_ids"] , only_infer = True) # shape 1, 768
+            class_embedding = F.normalize(class_embeddings, dim=-1).mean(dim=0) # [768] , d (was of shape 1, 768 before mean)
             class_embedding /= class_embedding.norm()
             zeroshot_weights.append(class_embedding)
         zeroshot_weights = torch.stack(zeroshot_weights, dim=1).to(device)

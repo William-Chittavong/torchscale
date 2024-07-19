@@ -175,9 +175,10 @@ class PRSLogger(object):
         self.ffn = torch.stack(self.ffn, axis=1).to(self.device)  # [b, l + 1, d]
         
         if self.spatial:
-            norm_attentions = self._normalize_attentions_spatial
+            norm_attentions = self._normalize_attentions_spatial()
         else:
-            norm_attentions = self._normalize_attentions_non_spatial
+            norm_attentions = self._normalize_attentions_non_spatial()
+            
         #attentions = self._normalize_attentions()
         norm_ffn = self._normalize_ffn()
         print("norm ffn \n ", norm_ffn.shape)
