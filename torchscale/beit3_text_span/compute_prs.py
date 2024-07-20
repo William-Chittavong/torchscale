@@ -44,7 +44,7 @@ def get_args_parser():
     
     # Dataset parameters
     parser.add_argument(
-        "--data_path", default="/shared/group/ilsvrc", type=str, help="dataset path"
+        "--data_path", default="/home/william", type=str, help="dataset path"
     )
     parser.add_argument(
         "--dataset", type=str, default="imagenet", help="imagenet, cub or waterbirds"
@@ -107,7 +107,7 @@ def main(args):
     for i, (image, _) in enumerate(tqdm.tqdm(dataloader)):
         with torch.no_grad():
             prs.reinit()
-            representation = model(
+            representation , _ = model(
                 image.to(args.device), normalize=False , only_infer = True
             )
             attentions, mlps = prs.finalize(representation)
