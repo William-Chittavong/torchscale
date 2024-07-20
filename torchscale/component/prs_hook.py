@@ -53,7 +53,7 @@ class PRSLogger(object):
 
     @torch.no_grad()
     def compute_ffn(self, ret):
-        print("ffn rep shape \n",ret.shape)
+        #print("ffn rep shape \n",ret.shape)
         self.ffn.append(ret[:, 0,:].detach().cpu()) # b,(h d)
         return ret
 
@@ -181,10 +181,10 @@ class PRSLogger(object):
             
         #attentions = self._normalize_attentions()
         norm_ffn = self._normalize_ffn()
-        print("norm ffn \n ", norm_ffn.shape)
+        #print("norm ffn \n ", norm_ffn.shape)
         projected_attentions = self.model.vision_head(norm_attentions)
         projected_ffn = self.model.vision_head(norm_ffn)
-        print("projected ffn \n ", projected_ffn.shape)
+        #print("projected ffn \n ", projected_ffn.shape)
         norm = rep.norm(dim=-1).detach()
         # print(norm.shape, "norm before new axis \n")
         
