@@ -34,7 +34,6 @@ def get_args_parser():
     
     parser.add_argument("--checkpoint_path",default = "https://github.com/addf400/files/releases/download/beit3/beit3_base_patch16_224.pth" , help = "pretrained checkpoints")
     
-    parser.add_argument("--tokenizer",default = "/home/william/Documents/GitHub/torchscale/beit3.spm" ,  help = "sentence piece tokenizer" , type =str )
     
     parser.add_argument("--img_size",default = 224 , help="image size", type = int )
     
