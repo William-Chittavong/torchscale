@@ -29,7 +29,9 @@ def get_args_parser():
     parser = argparse.ArgumentParser("Project Residual Stream", add_help=False)
     parser.add_argument("--batch_size", default=2, type=int, help="Batch size")
     # Model parameters
-   
+    
+    parser.add_argument("--model", default= "BEiT3ForRetrieval" ,type = str)
+    
     parser.add_argument("--checkpoint_path",default = "https://github.com/addf400/files/releases/download/beit3/beit3_base_patch16_224.pth" , help = "pretrained checkpoints")
     
     parser.add_argument("--tokenizer",default = "/home/william/Documents/GitHub/torchscale/beit3.spm" ,  help = "sentence piece tokenizer" , type =str )

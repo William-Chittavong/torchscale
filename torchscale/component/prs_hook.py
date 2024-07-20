@@ -199,9 +199,7 @@ class PRSLogger(object):
             / norm[:, np.newaxis, np.newaxis], 
             projected_ffn / norm[:, np.newaxis, np.newaxis], 
         ) 
-        norm = norm[:, np.newaxis, np.newaxis]
-        print("proj ffn / norm \n", (projected_ffn/norm).shape)
-        return (projected_attentions/norm / projected_ffn/norm ) 
+    
         
 
     def reinit(self):
