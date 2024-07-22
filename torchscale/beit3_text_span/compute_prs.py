@@ -39,7 +39,7 @@ def get_args_parser():
     
     parser.add_argument("--model_size",default = "base",help = "model size",type = str)
     
-    parser.add_argument("--num_heads" ,default = 12 , help = "attention heads", type = int)
+    parser.add_argument("--num_heads" ,default = 1 , help = "attention heads", type = int)
     
     
     # Dataset parameters
@@ -49,7 +49,7 @@ def get_args_parser():
     parser.add_argument(
         "--dataset", type=str, default="imagenet", help="imagenet, cub or waterbirds"
     )
-    parser.add_argument("--num_workers", default=10, type=int)
+    parser.add_argument("--num_workers", default=1, type=int)
     
     
     
