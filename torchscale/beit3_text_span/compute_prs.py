@@ -102,7 +102,7 @@ def main(args):
 
     attention_results = []
     #mlp_results = []
-    cls_to_cls_results = []
+    #cls_to_cls_results = []
     
     for i, (image, _) in enumerate(tqdm.tqdm(dataloader)):
         with torch.no_grad():
@@ -120,9 +120,9 @@ def main(args):
             )  # Reduce the spatial dimension
             #mlps = rearrange(mlps , "b l (h d) -> b l h d", h = args.num_heads)
             #mlp_results.append(np.sum(mlps, axis=2)) # reduce the heads 
-            cls_to_cls_results.append(
-                np.sum(attentions[:, :, 0], axis=2)
-            )  # Store the cls->cls attention, reduce the heads
+            # cls_to_cls_results.append(
+            #     np.sum(attentions[:, :, 0], axis=2)
+            # )  # Store the cls->cls attention, reduce the heads
             
             
 
@@ -134,10 +134,10 @@ def main(args):
     #     os.path.join(args.output_dir, f"{args.dataset}_mlp_{args.model}.npy"), "wb"
     # ) as f:
     #     np.save(f, np.concatenate(mlp_results, axis=0))
-    with open(
-        os.path.join(args.output_dir, f"{args.dataset}_cls_attn_{args.model}.npy"), "wb"
-    ) as f:
-        np.save(f, np.concatenate(cls_to_cls_results, axis=0))
+    # with open(
+    #     os.path.join(args.output_dir, f"{args.dataset}_cls_attn_{args.model}.npy"), "wb"
+    # ) as f:
+    #     np.save(f, np.concatenate(cls_to_cls_results, axis=0))
 
 
 if __name__ == "__main__":
