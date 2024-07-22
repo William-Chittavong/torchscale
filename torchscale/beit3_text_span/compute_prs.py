@@ -110,7 +110,7 @@ def main(args):
             representation , _ = model(
                 image.to(args.device), normalize=False , only_infer = True
             )
-            attentions, _ = prs.finalize(representation)
+           
             attentions, mlps = prs.finalize(representation)
             attentions =  rearrange(attentions , "b l n (h d) -> b l n h d",h = 12)
             attentions = attentions.detach().cpu().numpy()  # [b, l, n, h, d]
