@@ -136,13 +136,13 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
         
         data = data - (
             (data @ text_features_flat[top_n] / text_norm)[:, np.newaxis]
-            * text_features_flat[top_n][np.newinstance, :]
+            * text_features_flat[top_n][np.newaxis, :]
         )
         
         text_features_flat = (
             text_features_flat
             - (text_features_flat @ text_features_flat[top_n] / text_norm)[:, np.newaxis]
-            * text_features_flat[top_n][np.newinstance, :]
+            * text_features_flat[top_n][np.newaxis, :]
         )
         
         # Reshape text_features back to (3498, 12, 64)
