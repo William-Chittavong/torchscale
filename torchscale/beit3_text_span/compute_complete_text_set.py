@@ -16,7 +16,7 @@ from torchscale.clip_utils.misc import accuracy
 
 
 @torch.no_grad()
-def replace_with_iterative_removal(data, text_features, texts, iters, rank, device):
+def replace_with_iterative_removal(data, text_features, texts, iters, rank, device , num_heads):
     results = []
     
     print(f"Data shape: {data.shape}")
@@ -26,7 +26,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     vh = vh[:rank]
     
     print(f"vh shape after truncation: {vh.shape}")
-    text_features = einops.rearrange(texts,"b (h d) -> b h d")
+    text_features = einops.rearrange(texts,"b (h d) -> b h d" , h = num_heads)
     text_features = text_features.sum(axis=1)
     text_features = (
         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
@@ -114,6 +114,8 @@ def get_args_parser():
         help="The number of text examples per head.",
     )
     parser.add_argument("--device", default="cuda:0", help="device to use for testing")
+    
+    parser.add_argument("num_heads " , default = 12, help = "attn heads" )
     return parser
 
 
@@ -162,6 +164,7 @@ def main(args):
                     args.texts_per_head,
                     args.w_ov_rank,
                     args.device,
+                    args.num_heads
                 )
                 attns[:, i, head] = results
                 all_images |= set(images)
