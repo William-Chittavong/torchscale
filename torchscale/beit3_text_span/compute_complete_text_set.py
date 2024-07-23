@@ -26,9 +26,15 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     vh = vh[:rank]
     
     print(f"vh shape after truncation: {vh.shape}")
-    text_features = (
-        vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
-    )  # Project the text to the span of W_OV
+    # text_features = (
+    #     vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
+    # )  # Project the text to the span of W_OV
+    
+    # Project text_features onto the space spanned by vh
+    projected_text_features = vh.T.dot(vh.dot(text_features.T))
+    print(f"Projected text features shape: {projected_text_features.shape}")
+    
+    text_features = projected_text_features.T
     data = torch.from_numpy(data).float().to(device)
     mean_data = data.mean(dim=0, keepdim=True)
     data = data - mean_data
