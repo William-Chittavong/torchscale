@@ -103,8 +103,10 @@ def main(args):
     base, name = os.path.split(args.data_path)
     name = name.replace('.txt', '')
     features = get_text_features(model, tokenizer, lines, args.device, args.batch_size)
-    with open(os.path.join(args.output_dir, f'{name}_{args.model}.npy'), 'wb') as f:
+    with open(os.path.join(args.output_dir, f'{name}.npy'), 'wb') as f:
         np.save(f, features.numpy())
+    # with open(os.path.join(args.output_dir, f'{name}_{args.model}.npy'), 'wb') as f:
+    #     np.save(f, features.numpy())
     
     
 if __name__ == '__main__':
