@@ -13,60 +13,144 @@ from torchvision.datasets import ImageNet
 from pathlib import Path
 
 from torchscale.clip_utils.misc import accuracy
+from einops import rearrange
 
+# @torch.no_grad()
+# def replace_with_iterative_removal(data, text_features, texts, iters, rank, device, num_heads):
+#     results = []
+    
+#     print(f"Data shape: {data.shape}")
+#     print(f"Text features shape: {text_features.shape}")
+#     print(f"Rank: {rank}")
+#     u, s, vh = np.linalg.svd(data, full_matrices=False)
+#     print(f"vh shape before using rank: {vh.shape}")
+#     vh = vh[:rank]
+    
+#     print(f"vh shape after truncation: {vh.shape}")
+#     text_features = (
+#         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
+#     )  # Project the text to the span of W_OV
+#     #  #Rearrange text_features to shape (3498, 12, 64)
+#     # text_features = rearrange(text_features, 'b (h d) -> b h d', h=num_heads)
+    
+#     # # Project the text features to the span of W_OV
+#     # text_features_flat = rearrange(text_features, 'b h d -> b (h d)')
+#     # text_features_flat = (
+#     #     vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features_flat.T).T
+#     # )
+#     # text_features = rearrange(text_features_flat, 'b (h d) -> b h d', h=12)
+#     print(" text features shape \n",text_features.shape)
+#     data = torch.from_numpy(data).float().to(device)
+#     mean_data = data.mean(dim=0, keepdim=True)
+#     data = data - mean_data
+#     reconstruct = einops.repeat(mean_data, "A B -> (C A) B", C=data.shape[0])
+#     reconstruct = reconstruct.detach().cpu().numpy()
+#     text_features = torch.from_numpy(text_features).float().to(device)
+#     for i in range(iters):
+#         projection = data @ text_features.T
+#         projection_std = projection.std(axis=0).detach().cpu().numpy()
+#         top_n = np.argmax(projection_std)
+#         results.append(texts[top_n])
+#         text_norm = text_features[top_n] @ text_features[top_n].T
+#         reconstruct += (
+#             (
+#                 (data @ text_features[top_n] / text_norm)[:, np.newaxis]
+#                 * text_features[top_n][np.newaxis, :]
+#             )
+#             .detach()
+#             .cpu()
+#             .numpy()
+#         )
+#         data = data - (
+#             (data @ text_features[top_n] / text_norm)[:, np.newaxis]
+#             * text_features[top_n][np.newaxis, :]
+#         )
+#         text_features = (
+#             text_features
+#             - (text_features @ text_features[top_n] / text_norm)[:, np.newaxis]
+#             * text_features[top_n][np.newaxis, :]
+#         )
+#     return reconstruct, results
+
+# import numpy as np
+# import torch
+# from einops import rearrange, repeat
 
 @torch.no_grad()
-def replace_with_iterative_removal(data, text_features, texts, iters, rank, device):
+def replace_with_iterative_removal(data, text_features, texts, iters, rank, device, num_heads):
     results = []
     
-    print(f"Data shape: {data.shape}")
-    print(f"Text features shape: {text_features.shape}")
+    print(f"Data shape: {data.shape}")  # Data shape: (50000, 64)
+    print(f"Text features shape: {text_features.shape}")  # Text features shape: (3498, 768)
     print(f"Rank: {rank}")
+    
+    # Perform SVD on the data
     u, s, vh = np.linalg.svd(data, full_matrices=False)
-    print(f"vh shape before using rank: {vh.shape}")
+    print(f"vh shape before using rank: {vh.shape}")  # vh shape before using rank: (64, 64)
+    
+    # Truncate vh to the desired rank
     vh = vh[:rank]
+    print(f"vh shape after truncation: {vh.shape}")  # vh shape after truncation: (64, 64)
     
-    print(f"vh shape after truncation: {vh.shape}")
-    # text_features = (
-    #     vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
-    # )  # Project the text to the span of W_OV
+    # Rearrange text_features to shape (3498, 12, 64)
+    text_features = rearrange(text_features, 'b (h d) -> b h d', h=num_heads)
+    print("text_features shape after rearrange:", text_features.shape)  # (3498, 12, 64)
     
-    # Project text_features onto the space spanned by vh
-    projected_text_features = vh.T.dot(vh.dot(text_features.T))
-    print(f"Projected text features shape: {projected_text_features.shape}")
+    # Flatten text_features back to (3498, 768) for projection
+    text_features_flat = rearrange(text_features, 'b h d -> b (h d)')
     
-    text_features = projected_text_features.T
+    # Project the text features to the span of W_OV
+    text_features_flat = (
+        vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features_flat.T).T
+    )  # Project the text to the span of W_OV
+    # After projection
+    print("text_features shape after projection:", text_features_flat.shape)  # (3498, 768)
+    
+    # Reshape text_features back to (3498, 12, 64)
+    text_features = rearrange(text_features_flat, 'b (h d) -> b h d', h=num_heads)
+    
     data = torch.from_numpy(data).float().to(device)
     mean_data = data.mean(dim=0, keepdim=True)
     data = data - mean_data
     reconstruct = einops.repeat(mean_data, "A B -> (C A) B", C=data.shape[0])
     reconstruct = reconstruct.detach().cpu().numpy()
     text_features = torch.from_numpy(text_features).float().to(device)
+    
     for i in range(iters):
-        projection = data @ text_features.T
+        # Flatten text_features for matrix multiplication
+        text_features_flat = text_features.view(text_features.shape[0], -1)
+        projection = data @ text_features_flat.T  # data: (50000, 64), text_features_flat.T: (768, 3498)
         projection_std = projection.std(axis=0).detach().cpu().numpy()
         top_n = np.argmax(projection_std)
         results.append(texts[top_n])
-        text_norm = text_features[top_n] @ text_features[top_n].T
+        text_norm = text_features_flat[top_n] @ text_features_flat[top_n].T  # (768, 768)
+        
         reconstruct += (
             (
-                (data @ text_features[top_n] / text_norm)[:, np.newaxis]
-                * text_features[top_n][np.newaxis, :]
+                (data @ text_features_flat[top_n] / text_norm)[:, np.newaxis]
+                * text_features_flat[top_n][np.newaxis, :]
             )
             .detach()
             .cpu()
             .numpy()
         )
+        
         data = data - (
-            (data @ text_features[top_n] / text_norm)[:, np.newaxis]
-            * text_features[top_n][np.newaxis, :]
+            (data @ text_features_flat[top_n] / text_norm)[:, np.newaxis]
+            * text_features_flat[top_n][np.newinstance, :]
         )
-        text_features = (
-            text_features
-            - (text_features @ text_features[top_n] / text_norm)[:, np.newaxis]
-            * text_features[top_n][np.newaxis, :]
+        
+        text_features_flat = (
+            text_features_flat
+            - (text_features_flat @ text_features_flat[top_n] / text_norm)[:, np.newaxis]
+            * text_features_flat[top_n][np.newinstance, :]
         )
+        
+        # Reshape text_features back to (3498, 12, 64)
+        text_features = text_features_flat.view(text_features.shape[0], num_heads, -1)
+    
     return reconstruct, results
+
 
 
 def get_args_parser():
@@ -119,6 +203,8 @@ def get_args_parser():
         help="The number of text examples per head.",
     )
     parser.add_argument("--device", default="cuda:0", help="device to use for testing")
+    
+    parser.add_argument("--num_heads",default= 12 , help = "attn heads",type = int)
     return parser
 
 
@@ -168,6 +254,7 @@ def main(args):
                     args.texts_per_head,
                     args.w_ov_rank,
                     args.device,
+                    args.num_heads
                 )
                 attns[:, i, head] = results
                 all_images |= set(images)
