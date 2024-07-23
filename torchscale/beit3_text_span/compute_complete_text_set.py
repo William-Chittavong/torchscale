@@ -27,7 +27,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     vh = vh[:rank]
     
     print(f"vh shape after truncation: {vh.shape}")
-    text_features = rearrange(texts,"b (h d) -> b h d" , h = num_heads)
+    text_features = rearrange(text_features,"b (h d) -> b h d" , h = num_heads)
     text_features = text_features.sum(axis=1)
     text_features = (
         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
@@ -116,7 +116,7 @@ def get_args_parser():
     )
     parser.add_argument("--device", default="cuda:0", help="device to use for testing")
     
-    parser.add_argument("--num_heads" , default = 12, help = "attn heads" )
+    parser.add_argument("--num_heads" , default = 12, type = int,help = "attn heads" )
     return parser
 
 
