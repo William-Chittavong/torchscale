@@ -23,6 +23,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     print(f"Text features shape: {text_features.shape}")
     print(f"Rank: {rank}")
     u, s, vh = np.linalg.svd(data, full_matrices=False)
+    print(f"vh shape before using rank: {vh.shape}")
     vh = vh[:rank]
     
     print(f"vh shape after truncation: {vh.shape}")
