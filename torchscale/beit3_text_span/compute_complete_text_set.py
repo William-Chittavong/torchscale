@@ -101,7 +101,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     
     # Project the text features to the span of W_OV
     text_features_flat = (
-        vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features_flat.T).T
+        vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
     )  # Project the text to the span of W_OV
     # After projection
     print("text_features shape after projection:", text_features_flat.shape)  # (3498, 768)
