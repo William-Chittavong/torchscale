@@ -131,7 +131,8 @@ def main(args):
             attns[:, i, head] = np.mean(attns[:, i, head], axis=0, keepdims=True)
     # Load text:
     with open(
-        os.path.join(args.input_dir, f"{args.text_descriptions}_{args.model}.npy"), "rb"
+        os.path.join(args.input_dir, f"{args.text_descriptions}"), "rb"
+        #os.path.join(args.input_dir, f"{args.text_descriptions}_{args.model}.npy"), "rb"
     ) as f:
         text_features = np.load(f)
     with open(os.path.join(args.text_dir, f"{args.text_descriptions}.txt"), "r") as f:
