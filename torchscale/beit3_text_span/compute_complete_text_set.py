@@ -98,7 +98,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     
     # Flatten text_features back to (3498, 768) for projection
     #text_features_flat = rearrange(text_features, 'b h d -> b (h d)')
-    
+    text_features = text_features.sum(axis = 1)
     # Project the text features to the span of W_OV
     text_features_flat = (
         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
