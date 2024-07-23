@@ -12,6 +12,7 @@ import argparse
 from torchvision.datasets import ImageNet
 from pathlib import Path
 
+from einops import rearrange
 from torchscale.clip_utils.misc import accuracy
 
 
