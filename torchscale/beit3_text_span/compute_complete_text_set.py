@@ -97,7 +97,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     print("text_features shape after rearrange:", text_features.shape)  # (3498, 12, 64)
     
     # Flatten text_features back to (3498, 768) for projection
-    text_features_flat = rearrange(text_features, 'b h d -> b (h d)')
+    #text_features_flat = rearrange(text_features, 'b h d -> b (h d)')
     
     # Project the text features to the span of W_OV
     text_features_flat = (
