@@ -115,7 +115,7 @@ def get_args_parser():
     )
     parser.add_argument("--device", default="cuda:0", help="device to use for testing")
     
-    parser.add_argument("--num_heads " , default = 12, help = "attn heads" )
+    parser.add_argument("--num_heads" , default = 12, help = "attn heads" )
     return parser
 
 
