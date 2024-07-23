@@ -106,8 +106,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     # After projection
     print("text_features shape after projection:", text_features_flat.shape)  # (3498, 768)
     
-    # Reshape text_features back to (3498, 12, 64)
-    text_features = rearrange(text_features_flat, 'b (h d) -> b h d', h=num_heads)
+   
     
     data = torch.from_numpy(data).float().to(device)
     mean_data = data.mean(dim=0, keepdim=True)
