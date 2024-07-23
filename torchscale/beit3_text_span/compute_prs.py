@@ -101,7 +101,7 @@ def main(args):
     )
 
     attention_results = []
-    mlp_results = []
+    ffn_results = []
     cls_to_cls_results = []
     
     for i, (image, _) in enumerate(tqdm.tqdm(dataloader)):
@@ -111,15 +111,15 @@ def main(args):
                 image.to(args.device), normalize=False , only_infer = True
             )
            
-            attentions, mlps = prs.finalize(representation)
+            attentions, ffns = prs.finalize(representation)
             attentions =  rearrange(attentions , "b l n (h d) -> b l n h d",h = 12)
             attentions = attentions.detach().cpu().numpy()  # [b, l, n, h, d]
-            mlps = mlps.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
+            ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
             attention_results.append(
                 np.sum(attentions, axis=2)
             )  # Reduce the spatial dimension
-            mlps = rearrange(mlps , "b l (h d) -> b l h d", h = args.num_heads)
-            mlp_results.append(np.sum(mlps, axis=2)) # reduce the heads 
+            ffns = rearrange(ffns , "b l (h d) -> b l h d", h = args.num_heads)
+            ffn_results.append(np.sum(ffns, axis=2)) # reduce the heads 
             cls_to_cls_results.append(
                  np.sum(attentions[:, :, 0], axis=2)
              )  # Store the cls->cls attention, reduce the heads
@@ -131,9 +131,9 @@ def main(args):
     ) as f:
         np.save(f, np.concatenate(attention_results, axis=0))
     with open(
-         os.path.join(args.output_dir, f"{args.dataset}_mlp_{args.model}.npy"), "wb"
+         os.path.join(args.output_dir, f"{args.dataset}_ffn_{args.model}.npy"), "wb"
      ) as f:
-         np.save(f, np.concatenate(mlp_results, axis=0))
+         np.save(f, np.concatenate(ffn_results, axis=0))
     with open(
          os.path.join(args.output_dir, f"{args.dataset}_cls_attn_{args.model}.npy"), "wb"
      ) as f:
