@@ -171,12 +171,28 @@ class MultiheadAttention(nn.Module):
 
         if self.inner_attn_ln is not None:
             attn = self.inner_attn_ln(attn)
+            
+        self.hook(
+                "out.post",
+                ret=torch.einsum(
+                    "bn(hc),dhc->bnhd",
+                    attn,
+                    self.out_proj.weight.reshape(
+                        self.embed_dim, self.num_heads, self.head_dim
+                    ),
+                ),
+            )
         
-        attn = self.out_proj(attn)
+        #to prove it, sum axis=2 and compare this collapse output with out_proj. 
+        
+        # so then its just b n d which is b l d where d is the embed dim. 
+        
+        
+        attn = self.out_proj(attn) #here would be b l (h d) or batch, 1 or n tokens, embded dim with head and d head dim together)
         
         # hook the reshaped attn to obtain the head without changing the operations
         #self.hook("out_proj_post", ret = rearrange(attn,"b l (h d) -> b l h d",h = self.num_heads))
-        self.hook("out_proj_post", ret = attn)
+        #self.hook("out_proj_post", ret = attn)
 
         self.hook.finalize()
         return attn, attn_weights
