@@ -26,7 +26,7 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     vh = vh[:rank]
     
     print(f"vh shape after truncation: {vh.shape}")
-    text_features = einops.rearrange(texts,"b (h d) -> b h d" , h = num_heads)
+    text_features = rearrange(texts,"b (h d) -> b h d" , h = num_heads)
     text_features = text_features.sum(axis=1)
     text_features = (
         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
