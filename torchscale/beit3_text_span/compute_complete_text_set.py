@@ -18,8 +18,14 @@ from torchscale.clip_utils.misc import accuracy
 @torch.no_grad()
 def replace_with_iterative_removal(data, text_features, texts, iters, rank, device):
     results = []
+    
+    print(f"Data shape: {data.shape}")
+    print(f"Text features shape: {text_features.shape}")
+    print(f"Rank: {rank}")
     u, s, vh = np.linalg.svd(data, full_matrices=False)
     vh = vh[:rank]
+    
+    print(f"vh shape after truncation: {vh.shape}")
     text_features = (
         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
     )  # Project the text to the span of W_OV
@@ -124,6 +130,8 @@ def main(args):
     ) as f:
         classifier = np.load(f)
     print(f"Number of layers: {attns.shape[1]}")
+    print(f"\n attn shapes: {attns.shape}")
+    print(f"\n ffn shapes: {ffns.shape}")
     all_images = set()
     # Mean-ablate the other parts
     for i in tqdm.trange(attns.shape[1] - args.num_of_last_layers):
@@ -131,8 +139,8 @@ def main(args):
             attns[:, i, head] = np.mean(attns[:, i, head], axis=0, keepdims=True)
     # Load text:
     with open(
-        os.path.join(args.input_dir, f"{args.text_descriptions}.npy"), "rb"
-        #os.path.join(args.input_dir, f"{args.text_descriptions}_{args.model}.npy"), "rb"
+        #os.path.join(args.input_dir, f"{args.text_descriptions}.npy"), "rb"
+        os.path.join(args.input_dir, f"{args.text_descriptions}_{args.model}.npy"), "rb"
     ) as f:
         text_features = np.load(f)
     with open(os.path.join(args.text_dir, f"{args.text_descriptions}.txt"), "r") as f:
