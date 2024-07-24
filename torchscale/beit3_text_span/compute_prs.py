@@ -112,14 +112,13 @@ def main(args):
             )
            
             attentions, ffns = prs.finalize(representation)
-            attentions =  rearrange(attentions , "b l n (h d) -> b l n h d",h = 12)
-            attentions = attentions.detach().cpu().numpy()  # [b, l, n, h, d]
+            
+            attentions = attentions.detach().cpu().numpy()  # [b, l, h, d]
             ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
             attention_results.append(
                 np.sum(attentions, axis=2)
-            )  # Reduce the spatial dimension
-            ffns = rearrange(ffns , "b l (h d) -> b l h d", h = args.num_heads)
-            ffn_results.append(np.sum(ffns, axis=2)) # reduce the heads 
+            )  
+            ffn_results.append(ffns) 
             cls_to_cls_results.append(
                  np.sum(attentions[:, :, 0], axis=2)
              )  # Store the cls->cls attention, reduce the heads

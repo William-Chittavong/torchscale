@@ -12,7 +12,6 @@ import argparse
 from torchvision.datasets import ImageNet
 from pathlib import Path
 
-from einops import rearrange
 from torchscale.clip_utils.misc import accuracy
 
 
@@ -27,11 +26,11 @@ def replace_with_iterative_removal(data, text_features, texts, iters, rank, devi
     vh = vh[:rank]
     
     print(f"vh shape after truncation: {vh.shape}")
-    text_features = rearrange(text_features,"b (h d) -> b h d" , h = num_heads)
-    text_features = text_features.sum(axis=1)
+    
     text_features = (
         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
     )  # Project the text to the span of W_OV
+    
     data = torch.from_numpy(data).float().to(device)
     mean_data = data.mean(dim=0, keepdim=True)
     data = data - mean_data
@@ -136,6 +135,8 @@ def main(args):
         classifier = np.load(f)
     print(f"Number of layers: {attns.shape[1]}")
     print(f"\n attn shape: {attns.shape[1]}")
+    
+
     all_images = set()
     # Mean-ablate the other parts
     for i in tqdm.trange(attns.shape[1] - args.num_of_last_layers):
