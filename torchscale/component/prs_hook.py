@@ -206,7 +206,7 @@ class PRSLogger(object):
             ) 
         return (
             projected_attentions
-            / norm[:, np.newaxis, np.newaxis], 
+            / norm[:, np.newaxis,np.newaxis, np.newaxis], 
             projected_ffn / norm[:, np.newaxis, np.newaxis], 
         ) 
     
