@@ -160,7 +160,7 @@ class PRSLogger(object):
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
-            :, :, np.newaxis
+            :, :, np.newaxis,np.newaxis
         ].to(self.device)
         
         
