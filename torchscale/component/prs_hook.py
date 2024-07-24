@@ -61,7 +61,7 @@ class PRSLogger(object):
     @torch.no_grad()
     def log_post_ln_mean(self, ret): # b , l (L or as in N)
         self.post_ln_mean = ret[:,0].detach().cpu() #b, 1 (one)
-        print()
+   
         return ret
 
     @torch.no_grad()
