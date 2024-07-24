@@ -175,7 +175,7 @@ class MultiheadAttention(nn.Module):
         expose = einops.rearrange(attn, "b n (h c) -> b n h c", h = self.num_heads)
         
         self.hook(
-                "out.post",
+                "out_proj_post",
                 ret=torch.einsum(
                     "bnhc,dhc->bnhd",
                     expose,
