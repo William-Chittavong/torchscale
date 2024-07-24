@@ -20,7 +20,24 @@ class PRSLogger(object):
         self.post_ln_std = None
         self.post_ln_mean = None
         self.model = model
+        self.out_collapse = []
+        self.normal_out = []
     
+    @torch.no_grad()
+    def log_out_collapse(self, ret): # b , l (L or as in N)
+        return_value = ret.detach().cpu() 
+        self.out_collapse = self.out_collapse.append(
+            return_value
+        ) 
+   
+        return ret
+
+    @torch.no_grad()
+    def log_normal_out(self, ret): # b , l (L or as in N)
+        return_value = ret.detach().cpu() 
+        self.normal_out = self.normal_out.append(
+            return_value
+        ) 
 
     @torch.no_grad()
     def compute_attentions_spatial(self, ret):
@@ -186,7 +203,8 @@ class PRSLogger(object):
         )  # [b, l, h, d] for non spatial (stacking b h d with all l layers)
         # print(self.attentions.shape,"post stack attentions shape \n")
         self.ffn = torch.stack(self.ffn, axis=1).to(self.device)  # [b, l + 1, d]
-        
+        self.out_collapse = torch.stack(self.out_collapse,axis=1).to(self.device)
+        self.normal_out = torch.stack(self.normal_out,axis = 1).to(self.device)
         if self.spatial:
             norm_attentions = self._normalize_attentions_spatial()
         else:
@@ -258,6 +276,14 @@ def hook_prs_logger(model, device , spatial: bool = True):
     model.hook_manager.register(
         "beit3.encoder.layer_norm_post.sqrt_var",
         prs.log_post_ln_std
+    )
+    
+    model.hook_manager.register(
+            "beit3.encoder.layer.*.self_attn.post_collapse_bias",
+        prs.log_out_collapse
+        )
+    model.hook_manager.register(
+        "beit3.encoder.layer.*.self_attn.out_proj_normal",prs.log_normal_out
     )
     
   

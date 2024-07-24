@@ -174,7 +174,7 @@ class MultiheadAttention(nn.Module):
         
         expose = einops.rearrange(attn, "b n (h c) -> b n h c", h = self.num_heads)
         
-        self.hook(
+        out_proj_post = self.hook(
                 "out_proj_post",
                 ret=torch.einsum(
                     "bnhc,dhc->bnhd",
@@ -185,6 +185,8 @@ class MultiheadAttention(nn.Module):
                 ),
             )
         
+        self.hook("post_collapse_bias",ret = out_proj_post.sum(axis=2) + self.out_proj.B.bias)
+        
         #to prove it, sum axis=2 and compare this collapse output with out_proj. 
         
         # so then its just b n d which is b l d where d is the embed dim. 
@@ -194,7 +196,7 @@ class MultiheadAttention(nn.Module):
         
         # hook the reshaped attn to obtain the head without changing the operations
         #self.hook("out_proj_post", ret = rearrange(attn,"b l (h d) -> b l h d",h = self.num_heads))
-        #self.hook("out_proj_post", ret = attn)
+        self.hook("out_proj_normal", ret = attn)
 
         self.hook.finalize()
         return attn, attn_weights

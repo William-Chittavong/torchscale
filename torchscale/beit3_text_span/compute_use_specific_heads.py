@@ -58,6 +58,7 @@ def main(args):
         os.path.join(args.input_dir, f"{args.dataset}_attn_{args.model}.npy"), "rb"
     ) as f:
         attns = np.load(f)  # [b, l, h, d]
+        print("attns shape \n ",attns.shape)
     with open(
         os.path.join(args.input_dir, f"{args.dataset}_ffn_{args.model}.npy"), "rb"
     ) as f:
