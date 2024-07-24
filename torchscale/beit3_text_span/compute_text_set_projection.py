@@ -110,8 +110,8 @@ def main(args):
     
     ####
     #current
-    # with open(os.path.join(args.output_dir, f'{name}_{args.model}.npy'), 'wb') as f:
-    #     np.save(f, features.numpy())
+    with open(os.path.join(args.output_dir, f'{name}_{args.model}.npy'), 'wb') as f:
+        np.save(f, features.numpy())
     
     
 if __name__ == '__main__':
