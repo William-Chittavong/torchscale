@@ -60,12 +60,12 @@ class PRSLogger(object):
  
     @torch.no_grad()
     def log_post_ln_mean(self, ret):
-        self.post_ln_mean = ret[:,0].detach().cpu()  
+        self.post_ln_mean = ret.detach().cpu()  
         return ret
 
     @torch.no_grad()
     def log_post_ln_std(self, ret):
-        self.post_ln_std = ret[:,0].detach().cpu()  
+        self.post_ln_std = ret.detach().cpu()  
         return ret
 
 
@@ -230,6 +230,7 @@ def hook_prs_logger(model, device , spatial: bool = True):
         prs.compute_attentions_spatial
         )
     else:
+        print("using non spatial \n")
         model.hook_manager.register(
             "beit3.encoder.layer.*.self_attn.out_proj_post",
         prs.compute_attentions_non_spatial
