@@ -226,6 +226,7 @@ def hook_prs_logger(model, device , spatial: bool = True):
     
     prs = PRSLogger( model, device , spatial = spatial)
     if spatial:
+        print("SPATIAL \n")
         model.hook_manager.register(
             "beit3.encoder.layer.*.self_attn.out_proj_post",
         prs.compute_attentions_spatial
