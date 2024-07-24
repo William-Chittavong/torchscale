@@ -143,8 +143,8 @@ class PRSLogger(object):
         print("layer_norm.B.bias shape:\n", self.model.beit3.encoder.layer_norm.B.bias.shape)
         len_intermediates = self.attentions.shape[1] 
         normalization_term = (
-            self.attentions.shape[1] * self.attentions.shape[2]
-        )  # n * h
+          self.attentions.shape[2]
+        )  # h
         # This is just the normalization layer:
         print("post ln shape before newaxis \n" ,self.post_ln_mean.shape)
         print("shape of attentions \n ", self.attentions.shape)
