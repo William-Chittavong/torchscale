@@ -107,10 +107,12 @@ class PRSLogger(object):
         )  # n * h
         # This is just the normalization layer:
         
-        print("shape of attentions \n ", self.attentions.shape)
-        print("post ln shape",self.post_ln_mean[
-             :, :, np.newaxis, np.newaxis, np.newaxis
-        ].shape)
+        # print("shape of attentions \n ", self.attentions.shape)
+        # print("post ln shape",self.post_ln_mean[
+        #      :, :, np.newaxis, np.newaxis, np.newaxis
+        # ].shape)
+        
+        # post ln_mean shape orch.Size([2, 1, 1, 1, 1])
         mean_centered = self.attentions - self.post_ln_mean[
              :, :, np.newaxis, np.newaxis, np.newaxis
         ].to(self.device) / (len_intermediates * normalization_term)
