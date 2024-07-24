@@ -27,7 +27,7 @@ class PRSLogger(object):
         #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
 
         self.current_layer += 1
-        return_value = ret.detach().cpu() # # [b , l , (h ,d)]
+        return_value = ret.detach().cpu() # [b , l ,h d]
        
         self.attentions.append(
             return_value
@@ -40,14 +40,14 @@ class PRSLogger(object):
         #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
 
         self.current_layer += 1
-        return_value = ret[:, 0].detach().cpu() # cls token # [b , (h ,d)]
+        return_value = ret[:, 0].detach().cpu() # cls token # [b 1 h d  ]
         #return_value = ret.detach().cpu() # cls token
         #print(return_value.shape,"cls token shape of attn before stacking")
         self.attentions.append(
             return_value
             # + bias_term[np.newaxis, np.newaxis, np.newaxis].cpu()
             # / (return_value.shape[1] * return_value.shape[2])
-        )  # [b, (h d) ]
+        )  # [b h d]
         return ret
 
 
@@ -59,13 +59,14 @@ class PRSLogger(object):
 
  
     @torch.no_grad()
-    def log_post_ln_mean(self, ret):
-        self.post_ln_mean = ret[:,0].detach().cpu()  
+    def log_post_ln_mean(self, ret): # b , l (L or as in N)
+        self.post_ln_mean = ret[:,0].detach().cpu() #b, 1 (one)
+        print()
         return ret
 
     @torch.no_grad()
     def log_post_ln_std(self, ret):
-        self.post_ln_std = ret[:,0].detach().cpu()  
+        self.post_ln_std = ret[:,0].detach().cpu()  # b, 1 
         return ret
 
 
@@ -107,11 +108,11 @@ class PRSLogger(object):
         # This is just the normalization layer:
         
         print("shape of attentions \n ", self.attentions.shape)
-        print("post ln shape",post_ln[
-            :, np.newaxis, np.newaxis , np.newaxis
+        print("post ln shape",self.post_ln_mean[
+             :, :, np.newaxis, np.newaxis, np.newaxis
         ].shape)
         mean_centered = self.attentions - self.post_ln_mean[
-            :, np.newaxis, np.newaxis , np.newaxis
+             :, :, np.newaxis, np.newaxis, np.newaxis
         ].to(self.device) / (len_intermediates * normalization_term)
         
         weighted_mean_centered = (
@@ -119,7 +120,7 @@ class PRSLogger(object):
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
-            :, :, np.newaxis , np.newaxis
+             :, :, np.newaxis, np.newaxis, np.newaxis
         ].to(self.device)
         
         
@@ -201,7 +202,7 @@ class PRSLogger(object):
         if self.spatial:
             return (
                 projected_attentions
-                / norm[:, np.newaxis, np.newaxis, np.newaxis], 
+                / norm[:, np.newaxis, np.newaxis, np.newaxis, np.newaxis], 
                 projected_ffn / norm[:, np.newaxis, np.newaxis], 
             ) 
         return (
