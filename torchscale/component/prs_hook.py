@@ -75,7 +75,7 @@ class PRSLogger(object):
         # This is just the normalization layer:
         mean_centered = (
             self.ffn - self.post_ln_mean[
-            :, 0, np.newaxis
+            :, :, np.newaxis
         ].to(self.device) / len_intermediates
         )
         
@@ -84,7 +84,7 @@ class PRSLogger(object):
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
-            :, 0, np.newaxis
+            :, :, np.newaxis
         ].to(self.device)
         bias_term = self.model.beit3.encoder.layer_norm.B.bias.detach().to(self.device) / (
             len_intermediates 
@@ -106,7 +106,7 @@ class PRSLogger(object):
         )  # n * h
         # This is just the normalization layer:
         mean_centered = self.attentions - self.post_ln_mean[
-            :, 0, np.newaxis , np.newaxis
+            :, :, np.newaxis , np.newaxis
         ].to(self.device) / (len_intermediates * normalization_term)
         
         weighted_mean_centered = (
@@ -114,7 +114,7 @@ class PRSLogger(object):
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
-            :, 0, np.newaxis , np.newaxis
+            :, :, np.newaxis , np.newaxis
         ].to(self.device)
         
         
@@ -142,7 +142,7 @@ class PRSLogger(object):
         )  # n * h
         # This is just the normalization layer:
         mean_centered = self.attentions - self.post_ln_mean[
-            :, 0, np.newaxis
+            :, :, np.newaxis
         ].to(self.device) / (len_intermediates * normalization_term)
         
         weighted_mean_centered = (
@@ -150,7 +150,7 @@ class PRSLogger(object):
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
-            :, 0, np.newaxis
+            :, :, np.newaxis
         ].to(self.device)
         
         
