@@ -186,7 +186,7 @@ class MultiheadAttention(nn.Module):
             )
         
         self.hook("post_collapse_bias",ret = out_proj_post.sum(axis=2) + self.out_proj.B.bias)
-        
+        collapse = out_proj_post.sum(axis=2) + self.out_proj.B.bias
         #to prove it, sum axis=2 and compare this collapse output with out_proj. 
         
         # so then its just b n d which is b l d where d is the embed dim. 
@@ -194,6 +194,7 @@ class MultiheadAttention(nn.Module):
         
         attn = self.out_proj(attn) #here would be b l (h d) or batch, 1 or n tokens, embded dim with head and d head dim together)
         
+        print("norm of attn and post collapse:\n ",torch.norm((attn - collapse).flatten()))
         # hook the reshaped attn to obtain the head without changing the operations
         #self.hook("out_proj_post", ret = rearrange(attn,"b l (h d) -> b l h d",h = self.num_heads))
         self.hook("out_proj_normal", ret = attn)
