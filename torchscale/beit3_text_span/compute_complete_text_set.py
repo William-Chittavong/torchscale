@@ -124,6 +124,7 @@ def main(args):
         os.path.join(args.input_dir, f"{args.dataset}_attn_{args.model}.npy"), "rb"
     ) as f:
         attns = np.load(f)  # [b, l, h, d]
+        print("attns shape \n",attns.shape)
     with open(
         os.path.join(args.input_dir, f"{args.dataset}_ffn_{args.model}.npy"), "rb"
     ) as f:
@@ -159,6 +160,7 @@ def main(args):
     ) as w:
         for i in tqdm.trange(attns.shape[1] - args.num_of_last_layers, attns.shape[1]):
             for head in range(attns.shape[2]):
+                print("attns[:, i, head] shape \n" ,  attns[:, i, head].shape)
                 results, images = replace_with_iterative_removal(
                     attns[:, i, head],
                     text_features,
