@@ -58,7 +58,7 @@ def get_args_parser():
     )
     parser.add_argument("--device", default="cuda:0", help="device to use for testing")
     
-    parser.add_argument("--spatial", default=False ,type = bool , help = "keep n/l dimension" )
+
     
     return parser
 
@@ -73,9 +73,8 @@ def main(args):
     model.to(args.device)
     model.eval()
     
-    print("args spatial \n ",args.spatial)
    
-    prs = hook_prs_logger(model, args.device , spatial = args.spatial) # spatial by default is true
+    prs = hook_prs_logger(model, args.device , spatial = False) # spatial by default is true
     
     preprocess = image_transform(
         args.img_size,
@@ -117,12 +116,16 @@ def main(args):
             attentions = attentions.detach().cpu().numpy()  # torch.Size([2, 12, 197, 12, 768])
 
             #ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
-            if args.spatial:
-                attention_results.append(
-                    np.sum(attentions, axis=2)
-                )  
-            else:
-                attention_results.append(
+            # if args.spatial:
+            #     attention_results.append(
+            #         np.sum(attentions, axis=2)
+            #     )  
+            # else:
+            #     attention_results.append(
+            #             attentions
+            # )
+                
+            attention_results.append(
                         attentions
             )
             # ffn_results.append(ffns) 
