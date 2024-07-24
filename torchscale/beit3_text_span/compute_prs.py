@@ -101,8 +101,8 @@ def main(args):
     )
 
     attention_results = []
-    # ffn_results = []
-    # cls_to_cls_results = []
+    ffn_results = []
+    #cls_to_cls_results = []
     
     for i, (image, _) in enumerate(tqdm.tqdm(dataloader)):
         with torch.no_grad():
@@ -111,11 +111,11 @@ def main(args):
                 image.to(args.device), normalize=False , only_infer = True
             )
            
-            #attentions, ffns = prs.finalize(representation)
-            attentions, _ = prs.finalize(representation)
+            attentions, ffns = prs.finalize(representation)
+            #attentions, _ = prs.finalize(representation)
             attentions = attentions.detach().cpu().numpy()  # torch.Size([2, 12, 197, 12, 768])
 
-            #ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
+            ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
             # if args.spatial:
             #     attention_results.append(
             #         np.sum(attentions, axis=2)
@@ -128,7 +128,7 @@ def main(args):
             attention_results.append(
                         attentions
             )
-            # ffn_results.append(ffns) 
+            ffn_results.append(ffns) 
             # cls_to_cls_results.append(
             #      np.sum(attentions[:, :, 0], axis=2)
             #  )  # Store the cls->cls attention, reduce the heads
