@@ -77,8 +77,8 @@ def main(args):
             labels = np.load(f)
             labels = labels[:, :, 0]
     baseline = attns.sum(axis=(1, 2)) + ffns.sum(axis=1)
-    print("lables shape \n ",labels.shape)
-    print("labels[:, 0]shape \n ",labels[:, 0].shape)
+    print("lables shape \n ",labels)
+    print("labels[:, 0]shape \n ",labels[:, 0])
     baseline_acc = full_accuracy(
         torch.from_numpy(baseline @ classifier).float(),
         torch.from_numpy(labels[:, 0]),
