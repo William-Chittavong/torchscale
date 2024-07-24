@@ -111,18 +111,18 @@ def main(args):
                 image.to(args.device), normalize=False , only_infer = True
             )
            
-            attentions, ffns = prs.finalize(representation)
-            
+            #attentions, ffns = prs.finalize(representation)
+            attentions, _ = prs.finalize(representation)
             attentions = attentions.detach().cpu().numpy()  # torch.Size([2, 12, 197, 12, 768])
 
-            ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
+            #ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
             attention_results.append(
                 np.sum(attentions, axis=2)
             )  
-            ffn_results.append(ffns) 
-            cls_to_cls_results.append(
-                 np.sum(attentions[:, :, 0], axis=2)
-             )  # Store the cls->cls attention, reduce the heads
+            # ffn_results.append(ffns) 
+            # cls_to_cls_results.append(
+            #      np.sum(attentions[:, :, 0], axis=2)
+            #  )  # Store the cls->cls attention, reduce the heads
             # torch.cuda.empty_cache()
             
 
@@ -130,14 +130,14 @@ def main(args):
         os.path.join(args.output_dir, f"{args.dataset}_attn_{args.model}.npy"), "wb"
     ) as f:
         np.save(f, np.concatenate(attention_results, axis=0))
-    with open(
-         os.path.join(args.output_dir, f"{args.dataset}_ffn_{args.model}.npy"), "wb"
-     ) as f:
-         np.save(f, np.concatenate(ffn_results, axis=0))
-    with open(
-         os.path.join(args.output_dir, f"{args.dataset}_cls_attn_{args.model}.npy"), "wb"
-     ) as f:
-         np.save(f, np.concatenate(cls_to_cls_results, axis=0))
+    # with open(
+    #      os.path.join(args.output_dir, f"{args.dataset}_ffn_{args.model}.npy"), "wb"
+    #  ) as f:
+    #      np.save(f, np.concatenate(ffn_results, axis=0))
+    # with open(
+    #      os.path.join(args.output_dir, f"{args.dataset}_cls_attn_{args.model}.npy"), "wb"
+    #  ) as f:
+    #      np.save(f, np.concatenate(cls_to_cls_results, axis=0))
 
 
 if __name__ == "__main__":
