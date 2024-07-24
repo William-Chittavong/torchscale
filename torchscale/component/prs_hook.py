@@ -149,7 +149,7 @@ class PRSLogger(object):
         print("post ln shape before newaxis \n" ,self.post_ln_mean.shape)
         print("shape of attentions \n ", self.attentions.shape)
         print("post ln shape",self.post_ln_mean[
-            :, :, np.newaxis
+            :, :, np.newaxis,np.newaxis
         ].shape)
         mean_centered = self.attentions - self.post_ln_mean[
             :, :, np.newaxis
