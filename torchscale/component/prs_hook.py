@@ -224,7 +224,7 @@ class PRSLogger(object):
 
 def hook_prs_logger(model, device , spatial: bool = True):
     """Hooks a projected residual stream logger to the model."""
-    
+    print(spatial)
     prs = PRSLogger( model, device , spatial = spatial)
     if spatial:
         print("SPATIAL \n")

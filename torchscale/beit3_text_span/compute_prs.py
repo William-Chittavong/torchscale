@@ -72,9 +72,10 @@ def main(args):
 
     model.to(args.device)
     model.eval()
- 
+    
+    print("args spatial \n ",args.spatial)
    
-    prs = hook_prs_logger(model, args.device , args.spatial) # spatial by default is true
+    prs = hook_prs_logger(model, args.device , spatial = args.spatial) # spatial by default is true
     
     preprocess = image_transform(
         args.img_size,
