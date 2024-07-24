@@ -177,7 +177,7 @@ class MultiheadAttention(nn.Module):
                 ret=torch.einsum(
                     "bn(hc),dhc->bnhd",
                     attn,
-                    self.out_proj.weight.reshape(
+                    self.out_proj.B.weight.reshape(
                         self.embed_dim, self.num_heads, self.head_dim
                     ),
                 ),
