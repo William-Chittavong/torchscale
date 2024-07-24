@@ -59,9 +59,9 @@ def main(args):
     ) as f:
         attns = np.load(f)  # [b, l, h, d]
     with open(
-        os.path.join(args.input_dir, f"{args.dataset}_mlp_{args.model}.npy"), "rb"
+        os.path.join(args.input_dir, f"{args.dataset}_fnn_{args.model}.npy"), "rb"
     ) as f:
-        mlps = np.load(f)  # [b, l+1, d]
+        fnns = np.load(f)  # [b, l+1, d]
     with open(
         os.path.join(args.input_dir, f"{args.dataset}_classifier_{args.model}.npy"),
         "rb",
@@ -76,7 +76,7 @@ def main(args):
         ) as f:
             labels = np.load(f)
             labels = labels[:, :, 0]
-    baseline = attns.sum(axis=(1, 2)) + mlps.sum(axis=1)
+    baseline = attns.sum(axis=(1, 2)) + fnns.sum(axis=1)
     baseline_acc = full_accuracy(
         torch.from_numpy(baseline @ classifier).float(),
         torch.from_numpy(labels[:, 0]),
@@ -92,9 +92,9 @@ def main(args):
             attns[:, layer, head, :] = np.mean(
                 attns[:, layer, head, :], axis=0, keepdims=True
             )
-    for layer in range(mlps.shape[1]):
-        mlps[:, layer] = np.mean(mlps[:, layer], axis=0, keepdims=True)
-    ablated = attns.sum(axis=(1, 2)) + mlps.sum(axis=1)
+    for layer in range(fnns.shape[1]):
+        fnns[:, layer] = np.mean(fnns[:, layer], axis=0, keepdims=True)
+    ablated = attns.sum(axis=(1, 2)) + fnns.sum(axis=1)
     ablated_acc = full_accuracy(
         torch.from_numpy(ablated @ classifier).float(),
         torch.from_numpy(labels[:, 0]),
