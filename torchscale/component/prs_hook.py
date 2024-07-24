@@ -146,7 +146,7 @@ class PRSLogger(object):
         )  # n * h
         # This is just the normalization layer:
         mean_centered = self.attentions - self.post_ln_mean[
-            :, np.newaxis, np.newaxis
+            :, np.newaxis ,np.newaxis, np.newaxis
         ].to(self.device) / (len_intermediates * normalization_term)
         
         weighted_mean_centered = (
