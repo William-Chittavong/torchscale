@@ -26,8 +26,8 @@ class PRSLogger(object):
     def compute_attentions_spatial(self, ret):
         #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
 
-        self.current_layer += 1
-        return_value = ret.detach().cpu() # [b , l ,h d]
+        self.current_layer += 1             # b n h d 
+        return_value = ret.detach().cpu() # after stacking:  torch.Size([2, 12, 197, 12, 768])
        
         self.attentions.append(
             return_value
@@ -103,7 +103,7 @@ class PRSLogger(object):
         # print("layer_norm.B.bias shape:\n", self.model.beit3.encoder.layer_norm.B.bias.shape)
         #len_intermediates = self.attentions.shape[1] 
         normalization_term = (
-            self.attentions.shape[1] * self.attentions.shape[2]
+            self.attentions.shape[2] * self.attentions.shape[3]
         )  # n * h
         # This is just the normalization layer:
         
@@ -183,7 +183,7 @@ class PRSLogger(object):
         """We calculate the post-ln scaling, project it and normalize by the last norm."""
         self.attentions = torch.stack(self.attentions, axis=1).to(
             self.device
-        )  # [b, l, h, d]
+        )  # [b, l, h, d] for non spatial (stacking b h d with all l layers)
         # print(self.attentions.shape,"post stack attentions shape \n")
         self.ffn = torch.stack(self.ffn, axis=1).to(self.device)  # [b, l + 1, d]
         
@@ -192,7 +192,6 @@ class PRSLogger(object):
         else:
             norm_attentions = self._normalize_attentions_non_spatial()
             
-        #attentions = self._normalize_attentions()
         norm_ffn = self._normalize_ffn()
         #print("norm ffn \n ", norm_ffn.shape)
         projected_attentions = self.model.vision_head(norm_attentions)
