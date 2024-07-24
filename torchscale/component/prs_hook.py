@@ -20,25 +20,9 @@ class PRSLogger(object):
         self.post_ln_std = None
         self.post_ln_mean = None
         self.model = model
-        self.out_collapse = []
-        self.normal_out = []
+        
     
-    @torch.no_grad()
-    def log_out_collapse(self, ret): # b , l (L or as in N)
-        return_value = ret.detach().cpu() 
-        self.out_collapse = self.out_collapse.append(
-            return_value
-        ) 
-   
-        return ret
-
-    @torch.no_grad()
-    def log_normal_out(self, ret): # b , l (L or as in N)
-        return_value = ret.detach().cpu() 
-        self.normal_out = self.normal_out.append(
-            return_value
-        ) 
-
+ 
     @torch.no_grad()
     def compute_attentions_spatial(self, ret):
         #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
@@ -278,15 +262,6 @@ def hook_prs_logger(model, device , spatial: bool = True):
         prs.log_post_ln_std
     )
     
-    model.hook_manager.register(
-            "beit3.encoder.layer.*.self_attn.post_collapse_bias",
-        prs.log_out_collapse
-        )
-    model.hook_manager.register(
-        "beit3.encoder.layer.*.self_attn.out_proj_normal",prs.log_normal_out
-    )
-    
-  
     return prs
 
 
