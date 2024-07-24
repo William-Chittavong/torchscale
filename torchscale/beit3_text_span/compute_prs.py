@@ -113,7 +113,8 @@ def main(args):
            
             attentions, ffns = prs.finalize(representation)
             
-            attentions = attentions.detach().cpu().numpy()  # [b, l, h, d]
+            attentions = attentions.detach().cpu().numpy()  # torch.Size([2, 12, 197, 12, 768])
+
             ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
             attention_results.append(
                 np.sum(attentions, axis=2)
@@ -122,7 +123,7 @@ def main(args):
             cls_to_cls_results.append(
                  np.sum(attentions[:, :, 0], axis=2)
              )  # Store the cls->cls attention, reduce the heads
-            torch.cuda.empty_cache()
+            # torch.cuda.empty_cache()
             
 
     with open(
