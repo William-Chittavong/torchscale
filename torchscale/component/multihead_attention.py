@@ -168,17 +168,20 @@ class MultiheadAttention(nn.Module):
             q = self.xpos(q, offset=offset, downscale=False)
         
         ####
-        q *= self.scaling
-        q = rearrange(q, '(b h) l d -> b h l d', h=self.num_heads)
-        k = rearrange(k, '(b h) l d -> b h l d', h=self.num_heads)
-        v = rearrange(v, '(b h) l d -> b h l d', h=self.num_heads)
-        clip_attn = q @ k.transpose(-2, -1)
+        q2 = q
+        k2 = k
+        v2 = v
+        q2 *= self.scaling
+        q2 = rearrange(q2, '(b h) l d -> b h l d', h=self.num_heads)
+        k2 = rearrange(k2, '(b h) l d -> b h l d', h=self.num_heads)
+        v2 = rearrange(v2, '(b h) l d -> b h l d', h=self.num_heads)
+        clip_attn = q2 @ k2.transpose(-2, -1)
         if attn_mask is not None:
             clip_attn += attn_mask
         clip_attn = clip_attn.softmax(dim=-1)
         
         x = torch.einsum(
-            "bhnm,bhmc->bnhc", clip_attn, v
+            "bhnm,bhmc->bnhc", clip_attn, v2
         )  
         
         x =torch.einsum(
