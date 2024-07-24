@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torchscale.component.hook import HookManager
-from einops import rearrange
+import einops
 
 # try:
 #     from .fused_norm import FusedLayerNorm as LayerNorm
@@ -171,12 +171,14 @@ class MultiheadAttention(nn.Module):
 
         if self.inner_attn_ln is not None:
             attn = self.inner_attn_ln(attn)
-            
+        
+        expose = einops.rearrange(attn, "b n (h c) -> b n h c", h = self.num_heads)
+        
         self.hook(
                 "out.post",
                 ret=torch.einsum(
-                    "bn(hc),dhc->bnhd",
-                    attn,
+                    "bnhc,dhc->bnhd",
+                    expose,
                     self.out_proj.B.weight.reshape(
                         self.embed_dim, self.num_heads, self.head_dim
                     ),
