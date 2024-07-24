@@ -166,7 +166,32 @@ class MultiheadAttention(nn.Module):
                 offset = 0
             k = self.xpos(k, offset=0, downscale=True)
             q = self.xpos(q, offset=offset, downscale=False)
-
+        
+        ####
+        q *= self.scaling
+        q = rearrange(q, '(b h) l d -> b h l d', h=self.num_heads)
+        k = rearrange(k, '(b h) l d -> b h l d', h=self.num_heads)
+        v = rearrange(v, '(b h) l d -> b h l d', h=self.num_heads)
+        clip_attn = q @ k.transpose(-2, -1)
+        if attn_mask is not None:
+            clip_attn += attn_mask
+        clip_attn = clip_attn.softmax(dim=-1)
+        
+        x = torch.einsum(
+            "bhnm,bhmc->bnhc", clip_attn, v
+        )  
+        
+        x =torch.einsum(
+                    "bnhc,dhc->bnhd",
+                    x,
+                    self.out_proj.B.weight.reshape(
+                        self.embed_dim, self.num_heads, self.head_dim
+                    ))
+        x = x.sum(axis = 2)
+        x = x + self.out_proj.B.bias
+        
+        ###
+        
         attn, attn_weights = self.attention_ops(q, k, v, key_padding_mask=key_padding_mask, attn_mask=attn_mask, rel_pos=rel_pos, is_causal=is_causal)
 
         if self.inner_attn_ln is not None:
@@ -174,7 +199,7 @@ class MultiheadAttention(nn.Module):
         
         expose = einops.rearrange(attn, "b n (h c) -> b n h c", h = self.num_heads)
         
-        out_proj_post = self.hook(
+        self.hook(
                 "out_proj_post",
                 ret=torch.einsum(
                     "bnhc,dhc->bnhd",
@@ -185,7 +210,13 @@ class MultiheadAttention(nn.Module):
                 ),
             )
         
-        self.hook("post_collapse_bias",ret = out_proj_post.sum(axis=2) + self.out_proj.B.bias)
+        out_proj_post = torch.einsum(
+                    "bnhc,dhc->bnhd",
+                    expose,
+                    self.out_proj.B.weight.reshape(
+                        self.embed_dim, self.num_heads, self.head_dim
+                    ))
+        
         collapse = out_proj_post.sum(axis=2) + self.out_proj.B.bias
         #to prove it, sum axis=2 and compare this collapse output with out_proj. 
         
@@ -193,7 +224,8 @@ class MultiheadAttention(nn.Module):
         
         
         attn = self.out_proj(attn) #here would be b l (h d) or batch, 1 or n tokens, embded dim with head and d head dim together)
-        
+        print("distance of clip attn method and beit3 attn \n", torch.norm((attn - x).flatten()))
+        print("\n")
         print("norm of attn and post collapse:\n ",torch.norm((attn - collapse).flatten()))
         # hook the reshaped attn to obtain the head without changing the operations
         #self.hook("out_proj_post", ret = rearrange(attn,"b l (h d) -> b l h d",h = self.num_heads))
