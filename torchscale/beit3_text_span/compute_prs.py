@@ -132,7 +132,7 @@ def main(args):
             # cls_to_cls_results.append(
             #      np.sum(attentions[:, :, 0], axis=2)
             #  )  # Store the cls->cls attention, reduce the heads
-            torch.cuda.empty_cache()
+            
             
 
     with open(
