@@ -58,7 +58,7 @@ def get_args_parser():
     )
     parser.add_argument("--device", default="cuda:0", help="device to use for testing")
     
-   
+    parser.add_argument("spatial", default=True , type = bool , help = "keep n/l dimension" )
     
     return parser
 
@@ -74,7 +74,7 @@ def main(args):
     model.eval()
  
    
-    prs = hook_prs_logger(model, args.device ) # spatial by default is true
+    prs = hook_prs_logger(model, args.device , args.spatial) # spatial by default is true
     
     preprocess = image_transform(
         args.img_size,
@@ -101,8 +101,8 @@ def main(args):
     )
 
     attention_results = []
-    ffn_results = []
-    cls_to_cls_results = []
+    # ffn_results = []
+    # cls_to_cls_results = []
     
     for i, (image, _) in enumerate(tqdm.tqdm(dataloader)):
         with torch.no_grad():
@@ -116,9 +116,14 @@ def main(args):
             attentions = attentions.detach().cpu().numpy()  # torch.Size([2, 12, 197, 12, 768])
 
             #ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
-            attention_results.append(
-                np.sum(attentions, axis=2)
-            )  
+            if args.spatial:
+                attention_results.append(
+                    np.sum(attentions, axis=2)
+                )  
+            else:
+                attention_results.append(
+                        attentions
+            )
             # ffn_results.append(ffns) 
             # cls_to_cls_results.append(
             #      np.sum(attentions[:, :, 0], axis=2)
