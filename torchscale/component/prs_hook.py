@@ -105,6 +105,7 @@ class PRSLogger(object):
             self.attentions.shape[1] * self.attentions.shape[2]
         )  # n * h
         # This is just the normalization layer:
+        
         print("shape of attentions \n ", self.attentions.shape)
         print("post ln shape",post_ln[
             :, np.newaxis, np.newaxis , np.newaxis
@@ -145,6 +146,7 @@ class PRSLogger(object):
             self.attentions.shape[1] * self.attentions.shape[2]
         )  # n * h
         # This is just the normalization layer:
+        print("post ln shape before newaxis \n" ,self.post_ln_mean.shape)
         print("shape of attentions \n ", self.attentions.shape)
         print("post ln shape",self.post_ln_mean[
             :, :, np.newaxis
