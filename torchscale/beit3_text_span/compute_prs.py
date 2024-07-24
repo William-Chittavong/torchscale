@@ -118,7 +118,7 @@ def main(args):
             ffns = ffns.detach().cpu().numpy()  # [b, l+1, d] , for now since no ln before, its actually [ b , l , (h d) ]
             # if args.spatial:
             #     attention_results.append(
-            #         np.sum(attentions, axis=2)
+            #         np.sum(attentions, axis=2) takes ALOT of time. 1 hr vs 10 minutes for summing the 197 n/l dim. Also dies alot half way through. 
             #     )  
             # else:
             #     attention_results.append(

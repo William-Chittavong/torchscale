@@ -187,11 +187,11 @@ class MultiheadAttention(nn.Module):
         x =torch.einsum(
                     "bnhc,dhc->bnhd",
                     x,
-                    self.out_proj.B.weight.reshape(
+                    self.out_proj.A.weight.reshape(
                         self.embed_dim, self.num_heads, self.head_dim
                     ))
         x = x.sum(axis = 2)
-        x = x + self.out_proj.B.bias
+        x = x + self.out_proj.A.bias
         
         ###
         
@@ -207,7 +207,7 @@ class MultiheadAttention(nn.Module):
                 ret=torch.einsum(
                     "bnhc,dhc->bnhd",
                     expose,
-                    self.out_proj.B.weight.reshape(
+                    self.out_proj.A.weight.reshape(
                         self.embed_dim, self.num_heads, self.head_dim
                     ),
                 ),
@@ -216,11 +216,11 @@ class MultiheadAttention(nn.Module):
         out_proj_post = torch.einsum(
                     "bnhc,dhc->bnhd",
                     expose,
-                    self.out_proj.B.weight.reshape(
+                    self.out_proj.A.weight.reshape(
                         self.embed_dim, self.num_heads, self.head_dim
                     ))
         
-        collapse = out_proj_post.sum(axis=2) + self.out_proj.B.bias
+        collapse = out_proj_post.sum(axis=2) + self.out_proj.A.bias
         #to prove it, sum axis=2 and compare this collapse output with out_proj. 
         
         # so then its just b n d which is b l d where d is the embed dim. 

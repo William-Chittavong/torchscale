@@ -82,13 +82,13 @@ class PRSLogger(object):
         )
         
         weighted_mean_centered = (
-            self.model.beit3.encoder.layer_norm.B.weight.detach().to(self.device) * mean_centered
+            self.model.beit3.encoder.layer_norm.A.weight.detach().to(self.device) * mean_centered
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
             :, :, np.newaxis
         ].to(self.device)
-        bias_term = self.model.beit3.encoder.layer_norm.B.bias.detach().to(self.device) / (
+        bias_term = self.model.beit3.encoder.layer_norm.A.bias.detach().to(self.device) / (
             len_intermediates 
         )
         post_ln = weighted_mean_by_std + bias_term
@@ -119,7 +119,7 @@ class PRSLogger(object):
         ].to(self.device) / (len_intermediates * normalization_term)
         
         weighted_mean_centered = (
-            self.model.beit3.encoder.layer_norm.B.weight.detach().to(self.device) * mean_centered
+            self.model.beit3.encoder.layer_norm.A.weight.detach().to(self.device) * mean_centered
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
@@ -128,7 +128,7 @@ class PRSLogger(object):
         
         
         
-        bias_term = self.model.beit3.encoder.layer_norm.B.bias.detach().to(self.device) / (
+        bias_term = self.model.beit3.encoder.layer_norm.A.bias.detach().to(self.device) / (
             len_intermediates * normalization_term
         )
         
@@ -160,7 +160,7 @@ class PRSLogger(object):
         ].to(self.device) / (len_intermediates * normalization_term)
         
         weighted_mean_centered = (
-            self.model.beit3.encoder.layer_norm.B.weight.detach().to(self.device) * mean_centered
+            self.model.beit3.encoder.layer_norm.A.weight.detach().to(self.device) * mean_centered
 
         )
         weighted_mean_by_std = weighted_mean_centered / self.post_ln_std[
@@ -169,7 +169,7 @@ class PRSLogger(object):
         
         
         
-        bias_term = self.model.beit3.encoder.layer_norm.B.bias.detach().to(self.device) / (
+        bias_term = self.model.beit3.encoder.layer_norm.A.bias.detach().to(self.device) / (
             len_intermediates * normalization_term
         )
         
