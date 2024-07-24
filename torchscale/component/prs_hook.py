@@ -60,12 +60,12 @@ class PRSLogger(object):
  
     @torch.no_grad()
     def log_post_ln_mean(self, ret):
-        self.post_ln_mean = ret.detach().cpu()  
+        self.post_ln_mean = ret[:,0].detach().cpu()  
         return ret
 
     @torch.no_grad()
     def log_post_ln_std(self, ret):
-        self.post_ln_std = ret.detach().cpu()  
+        self.post_ln_std = ret[:,0].detach().cpu()  
         return ret
 
 
@@ -136,12 +136,12 @@ class PRSLogger(object):
     def _normalize_attentions_non_spatial(self):
         len_intermediates = self.attentions.shape[1] + self.ffn.shape[1]  # 2*l + 1
         
-        # print("self.attentions shape:\n", self.attentions.shape)
-        # print("self.post_ln_mean shape:\n", self.post_ln_mean.shape)
-        # print("self.post_ln_std shape:\n", self.post_ln_std.shape)
-        # print("layer_norm.B.weight shape:\n", self.model.beit3.encoder.layer_norm.B.weight.shape)
-        # print("layer_norm.B.bias shape:\n", self.model.beit3.encoder.layer_norm.B.bias.shape)
-        #len_intermediates = self.attentions.shape[1] 
+        print("self.attentions shape:\n", self.attentions.shape)
+        print("self.post_ln_mean shape:\n", self.post_ln_mean.shape)
+        print("self.post_ln_std shape:\n", self.post_ln_std.shape)
+        print("layer_norm.B.weight shape:\n", self.model.beit3.encoder.layer_norm.B.weight.shape)
+        print("layer_norm.B.bias shape:\n", self.model.beit3.encoder.layer_norm.B.bias.shape)
+        len_intermediates = self.attentions.shape[1] 
         normalization_term = (
             self.attentions.shape[1] * self.attentions.shape[2]
         )  # n * h
@@ -180,7 +180,7 @@ class PRSLogger(object):
         """We calculate the post-ln scaling, project it and normalize by the last norm."""
         self.attentions = torch.stack(self.attentions, axis=1).to(
             self.device
-        )  # [b, l, n, h, d]
+        )  # [b, l, h, d]
         # print(self.attentions.shape,"post stack attentions shape \n")
         self.ffn = torch.stack(self.ffn, axis=1).to(self.device)  # [b, l + 1, d]
         
