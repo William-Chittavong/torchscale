@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch import nn
 from torchscale.component.hook import HookManager
 import einops
-
+from einops import rearrange
 # try:
 #     from .fused_norm import FusedLayerNorm as LayerNorm
 # except ModuleNotFoundError:
