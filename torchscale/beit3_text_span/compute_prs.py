@@ -58,7 +58,7 @@ def get_args_parser():
     )
     parser.add_argument("--device", default="cuda:0", help="device to use for testing")
     
-    parser.add_argument("spatial", default=True , type = bool , help = "keep n/l dimension" )
+    parser.add_argument("--spatial", default=True , type = bool , help = "keep n/l dimension" )
     
     return parser
 
