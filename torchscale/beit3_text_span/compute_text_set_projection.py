@@ -81,11 +81,11 @@ def get_text_features(model, tokenizer, lines,
             texts = lines[i:i+batch_size] 
             texts = tokenizer(texts, return_tensors='pt',padding=True, truncation=True).to(device)  # tokenize
             _ ,class_embeddings = model(text_description = texts["input_ids"] , only_infer = True) # shape 1, 768
-            class_embeddings = F.normalize(class_embeddings, dim=-1) # (shape 1, 768 before mean)
-            print("class embeddings shape #\n",class_embeddings.shape)
+            #class_embeddings = F.normalize(class_embeddings, dim=-1) # (shape 1, 768 before mean)
+            #print("class embeddings shape #\n",class_embeddings.shape)
             zeroshot_weights.append(class_embeddings.detach().cpu())
         zeroshot_weights = torch.concatenate(zeroshot_weights, dim=0)
-    print("zeroshot_weights shape \n",zeroshot_weights.shape)
+    #print("zeroshot_weights shape \n",zeroshot_weights.shape)
     return zeroshot_weights
 
 
