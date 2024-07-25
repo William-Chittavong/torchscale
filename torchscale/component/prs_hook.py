@@ -187,8 +187,7 @@ class PRSLogger(object):
         )  # [b, l, h, d] for non spatial (stacking b h d with all l layers)
         # print(self.attentions.shape,"post stack attentions shape \n")
         self.ffn = torch.stack(self.ffn, axis=1).to(self.device)  # [b, l + 1, d]
-        self.out_collapse = torch.stack(self.out_collapse,axis=1).to(self.device)
-        self.normal_out = torch.stack(self.normal_out,axis = 1).to(self.device)
+        
         if self.spatial:
             norm_attentions = self._normalize_attentions_spatial()
         else:
