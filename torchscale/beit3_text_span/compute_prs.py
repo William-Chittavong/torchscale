@@ -133,16 +133,17 @@ def main(args):
             #      np.sum(attentions[:, :, 0], axis=2)
             #  )  # Store the cls->cls attention, reduce the heads
             
-            
+    print(np.concatenate(attention_results, axis=0))
 
-    with open(
-        os.path.join(args.output_dir, f"{args.dataset}_attn_{args.model}.npy"), "wb"
-    ) as f:
-        np.save(f, np.concatenate(attention_results, axis=0))
-    with open(
-         os.path.join(args.output_dir, f"{args.dataset}_ffn_{args.model}.npy"), "wb"
-     ) as f:
-         np.save(f, np.concatenate(ffn_results, axis=0))
+    # with open(
+    #     os.path.join(args.output_dir, f"{args.dataset}_attn_{args.model}.npy"), "wb"
+    # ) as f:
+    #     np.save(f, np.concatenate(attention_results, axis=0))
+    # with open(
+    #      os.path.join(args.output_dir, f"{args.dataset}_ffn_{args.model}.npy"), "wb"
+    #  ) as f:
+    #      np.save(f, np.concatenate(ffn_results, axis=0))
+    
     # with open(
     #      os.path.join(args.output_dir, f"{args.dataset}_cls_attn_{args.model}.npy"), "wb"
     #  ) as f:
