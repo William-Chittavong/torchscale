@@ -177,12 +177,24 @@ def main(args):
                 w.write(f"------------------\n")
                 for text in images:
                     w.write(f"{text}\n")
-
+        print("attns before mean ablated and replaced \n",attns)
+        print(attns.shape)
+        
+        print("\n attns after the sum axis 1,2 " , attns.sum(axis = (1,2)))
         mean_ablated_and_replaced = ffns.sum(axis=1) + attns.sum(axis=(1, 2))
         projections = torch.from_numpy(mean_ablated_and_replaced).float().to(
             args.device
         ) @ torch.from_numpy(classifier).float().to(args.device)
+        
+        print("projections shape \n",projections.shape)
+        print("projections \n ", projections)
         labels = np.array([i // 50 for i in range(attns.shape[0])])
+        
+        labels_tensor = torch.from_numpy(labels)
+        print("labels tensor \n",labels_tensor)
+        
+        print(labels_tensor.shape)
+        
         current_accuracy = (
             accuracy(projections.cpu(), torch.from_numpy(labels))[0] * 100.0
         )

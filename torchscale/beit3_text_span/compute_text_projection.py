@@ -106,7 +106,7 @@ def zero_shot_classifier(model, tokenizer, classnames, templates,
         print(zeroshot_weights.shape)
         print("\n")
         print(zeroshot_weights)
-    return zeroshot_weights
+    return zeroshot_weights # 768 , 1000
 
 
 def main(args):
