@@ -85,22 +85,22 @@ def zero_shot_classifier(model, tokenizer, classnames, templates,
             texts = [template.format(c=classname) if use_format else template(classname) for template in templates]
             texts = tokenizer(texts, return_tensors='pt',padding=True, truncation=True).to(device)  # tokenize
             _ ,class_embeddings = model(text_description = texts["input_ids"] , only_infer = True) # shape 1, 768
-            print(class_embeddings.shape)
+            print(class_embeddings.shape) # 80, 768
             print("\n")
             print("class embeddings \n", class_embeddings)
             #class_embedding = F.normalize(class_embeddings, dim=-1).mean(dim=0) # [768] , d (was of shape 1, 768 before mean)
             #class_embedding /= class_embedding.norm()
-            class_embedding = class_embeddings.mean(dim=0)
+            class_embedding = class_embeddings.mean(dim=0) #768
             print("class embedding after mean dim = 0 \n",class_embedding.shape)
             print(class_embedding)
             print("\n")
             class_embedding /= class_embedding.norm()
-            print("class embedding after norm \n ",class_embedding.shape)
+            print("class embedding after norm \n ",class_embedding.shape) # 768
             print("\n")
             zeroshot_weights.append(class_embedding)
             print("\n")
         print("zeroshot_weights before stacking \n" , zeroshot_weights)
-        print(zeroshot_weights.shape)
+    
         zeroshot_weights = torch.stack(zeroshot_weights, dim=1).to(device)
         print("after stacking z weights \n")
         print(zeroshot_weights.shape)
