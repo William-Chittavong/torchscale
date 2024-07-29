@@ -19,13 +19,13 @@ from torchscale.clip_utils.misc import accuracy
 def replace_with_iterative_removal(data, text_features, texts, iters, rank, device , num_heads):
     results = []
     
-    print(f"Data shape: {data.shape}")
-    print(f"Text features shape: {text_features.shape}")
-    print(f"Rank: {rank}")
+    print(f"Data shape: {data.shape}") # 50000 , 768
+    print(f"Text features shape: {text_features.shape}") # (3498, 768)
+    print(f"Rank: {rank}") #  80
     u, s, vh = np.linalg.svd(data, full_matrices=False)
     vh = vh[:rank]
     
-    print(f"vh shape after truncation: {vh.shape}")
+    print(f"vh shape after truncation: {vh.shape}") # (80, 768)
     
     text_features = (
         vh.T.dot(np.linalg.inv(vh.dot(vh.T)).dot(vh)).dot(text_features.T).T
@@ -125,10 +125,10 @@ def main(args):
     ) as f:
         attns = np.load(f)  # [b, l, h, d]
         print("attns shape \n",attns.shape)
-    with open(
-        os.path.join(args.input_dir, f"{args.dataset}_ffn_{args.model}.npy"), "rb"
-    ) as f:
-        ffns = np.load(f)  # [b, l+1, d]
+    # with open(
+    #     os.path.join(args.input_dir, f"{args.dataset}_ffn_{args.model}.npy"), "rb"
+    # ) as f:
+    #     ffns = np.load(f)  # [b, l+1, d]
     with open(
         os.path.join(args.input_dir, f"{args.dataset}_classifier_{args.model}.npy"),
         "rb",
@@ -178,20 +178,21 @@ def main(args):
                 for text in images:
                     w.write(f"{text}\n")
         print("attns before mean ablated and replaced \n",attns)
-        print(attns.shape)
+        print(attns.shape) # (50000, 12, 12, 768)
         
-        print("\n attns after the sum axis 1,2 " , attns.sum(axis = (1,2)))
-        mean_ablated_and_replaced = ffns.sum(axis=1) + attns.sum(axis=(1, 2))
+        print("\n attns after the sum axis 1,2 " , attns.sum(axis = (1,2))) # 50000, 768
+        #mean_ablated_and_replaced = ffns.sum(axis=1) + attns.sum(axis=(1, 2))
+        mean_ablated_and_replaced =  attns.sum(axis=(1, 2))
         projections = torch.from_numpy(mean_ablated_and_replaced).float().to(
             args.device
         ) @ torch.from_numpy(classifier).float().to(args.device)
         
-        print("projections shape \n",projections.shape)
+        print("projections shape \n",projections.shape) #torch.Size([50000, 1000])
         print("projections \n ", projections)
         labels = np.array([i // 50 for i in range(attns.shape[0])])
         
         labels_tensor = torch.from_numpy(labels)
-        print("labels tensor \n",labels_tensor)
+        print("labels tensor \n",labels_tensor) #tensor([  0,   0,   0,  ..., 999, 999, 999])
         
         print(labels_tensor.shape)
         
