@@ -108,7 +108,7 @@ def main(args):
         with torch.no_grad():
             prs.reinit()
             representation , _ = model(
-                image.to(args.device), normalize=False , only_infer = True
+                image = image.to(args.device), normalize=False , only_infer = True
             )
            
             attentions, ffns = prs.finalize(representation)
