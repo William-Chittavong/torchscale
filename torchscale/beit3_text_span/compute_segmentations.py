@@ -27,7 +27,7 @@ from torchscale.component.beit3_utils import load_model_and_may_interpolate
 def get_args_parser():
     parser = argparse.ArgumentParser(description='Segmentation scores')
     parser.add_argument('--save_img', action='store_true',
-                        default=False,
+                        default=True,
                         help='')
     parser.add_argument('--train_dataset', type=str, default='imagenet_seg', help='The name of the dataset')
     parser.add_argument('--classifier_dataset', type=str, default='imagenet', help='The name of the classifier dataset')
@@ -72,7 +72,7 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     
     attentions = attentions.detach().cpu() # [b, l, n, h, d]
     chosen_class = (representation.detach().cpu().numpy() @ classifier).argmax(axis=1)
-    patches = args.image_size // model.args.patch_size[0]
+    patches = args.image_size // model.args.patch_size
     attentions_collapse = attentions[:, :, 1:].sum(axis=(1,3))
     class_heatmap = attentions_collapse.detach().cpu().numpy() @ classifier  # [b, n, classes]
     results = []
@@ -82,7 +82,7 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     results = torch.from_numpy(np.stack(results, axis=0).reshape((attentions.shape[0], patches, patches)))
 
     Res = torch.nn.functional.interpolate(results[:, np.newaxis], 
-                                          scale_factor=model.args.patch_size[0], 
+                                          scale_factor=model.args.patch_size, 
                                           mode='bilinear').to(args.device)
     Res = torch.clip(Res, 0, Res.max())
     # threshold between FG and BG is the mean    
@@ -174,7 +174,7 @@ def main(args):
         transforms.Resize((args.image_size, args.image_size), Image.NEAREST),
     ])
     preprocess = image_transform(
-        image.size,
+        args.image_size,
         is_train=False,
     )
     ds = ImagenetSegmentation(args.data_path,
@@ -196,9 +196,9 @@ def main(args):
 
         images = image.to(args.device)
         labels = labels.to(args.device)
-
+        print("\n labels inside for loop of main ", labels) # 1 , 224,224
         correct, labeled, inter, union, ap, pred, target = eval_batch(model, prs, images, labels, batch_idx, args, classifier, saver)
-
+        print("\n target inside for loop of main ", target) # 50176
         predictions.append(pred)
         targets.append(target)
 
