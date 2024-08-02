@@ -65,7 +65,7 @@ def get_args_parser():
 
 def main(args):
     """Calculates the projected residual stream for a dataset."""
-    model = create_beit3_retrieval_model(model_size='base', img_size= args.img_size)
+    model = create_beit3_retrieval_model(model_size=args.model_size, img_size= args.img_size)
     
     
     load_model_and_may_interpolate(args.checkpoint_path, model, model_key='model', model_prefix='')

@@ -12,8 +12,8 @@ import os
 from pathlib import Path
 import tqdm
 
-from clip_utils.imagenet_segmentation import ImagenetSegmentation
-from clip_utils.segmentation_utils import (batch_pix_accuracy, batch_intersection_union, 
+from torchscale.clip_utils.imagenet_segmentation import ImagenetSegmentation
+from torchscale.clip_utils.segmentation_utils import (batch_pix_accuracy, batch_intersection_union, 
                                       get_ap_scores, Saver)
 from sklearn.metrics import precision_recall_curve
 from torchscale.component.prs_hook import hook_prs_logger
@@ -41,8 +41,10 @@ def get_args_parser():
     parser.add_argument('--batch_size', default=1, type=int,
                         help='Batch size')
     # Model parameters
-    parser.add_argument('--model', default='ViT-H-14', type=str, metavar='MODEL',
+    parser.add_argument('--model', default= "BEiT3ForRetrieval", type=str, metavar='MODEL',
                         help='Name of model to use')
+    parser.add_argument("--model_size",default = "base",help = "model size",type = str)
+    
     parser.add_argument("--checkpoint_path",default = "https://github.com/addf400/files/releases/download/beit3/beit3_base_patch16_224.pth" , help = "pretrained checkpoints")
     parser.add_argument('--output_dir', default='./output_dir',
                         help='path where to save')
@@ -64,12 +66,10 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     
     # Get the model attention maps:
     prs.reinit()
-    representation = model.encode_image(image.to(args.device), 
-                                        attn_method='head', 
-                                        normalize=False)
     
-    representation, _ = model(image=image, normalize = False ,only_infer = True)
+    representation, _ = model(image=image.to(args.device), normalize = False ,only_infer = True)
     attentions, _ = prs.finalize(representation)
+    
     attentions = attentions.detach().cpu() # [b, l, n, h, d]
     chosen_class = (representation.detach().cpu().numpy() @ classifier).argmax(axis=1)
     patches = args.image_size // model.args.patch_size[0]
@@ -160,7 +160,7 @@ def _create_saver_and_folders(args):
 def main(args):
     # Model
     hook = HookManager()
-    model = create_beit3_retrieval_model(model_size='base',hook_manager= hook, img_size=args.image_size)
+    model = create_beit3_retrieval_model(model_size=args.model_size,hook_manager= hook, img_size=args.image_size)
     load_model_and_may_interpolate(args.checkpoint_path, model, model_key='model', model_prefix='')
     
     model.to(args.device)
