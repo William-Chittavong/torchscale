@@ -236,6 +236,10 @@ class Encoder(nn.Module):
         # except for captioning and retrieval, normalize_output = false
         # so layer_norm is None in those cases
         # see final layer norm
+        
+        
+        # encoder_norm before is true by default of encoder config
+        # normalize output is also true for retrieval model
         if args.encoder_normalize_before and args.normalize_output:
             self.layer_norm = MultiwayWrapper(args, LayerNorm(embed_dim, eps=args.layernorm_eps,hook = hook.fork("layer_norm_post")))
         else:

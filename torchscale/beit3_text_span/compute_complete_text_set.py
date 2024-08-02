@@ -118,34 +118,33 @@ def get_args_parser():
     parser.add_argument("--num_heads" , default = 12, type = int,help = "attn heads" )
     return parser
 
+def check_summary_statistics(tensor, name):
+    print(f"\n{name} statistics:")
+    print(f"Mean: {tensor.mean().item()}")
+    print(f"Std: {tensor.std().item()}")
+    print(f"Min: {tensor.min().item()}")
+    print(f"Max: {tensor.max().item()}")
 
 def main(args):
     with open(
         os.path.join(args.input_dir, f"{args.dataset}_attn_{args.model}.npy"), "rb"
     ) as f:
-        attns = np.load(f)  # [b, l, h, d]
-        print("attns shape \n",attns.shape)
-    # with open(
-    #     os.path.join(args.input_dir, f"{args.dataset}_ffn_{args.model}.npy"), "rb"
-    # ) as f:
-    #     ffns = np.load(f)  # [b, l+1, d]
+        attns = np.load(f)
     with open(
         os.path.join(args.input_dir, f"{args.dataset}_classifier_{args.model}.npy"),
         "rb",
     ) as f:
         classifier = np.load(f)
-    print(f"Number of layers: {attns.shape[1]}")
-    print(f"\n attn shape: {attns.shape[1]}")
     
+    print(f"Number of layers: {attns.shape[1]}")
+    print(f"\n attn shape: {attns.shape}")
 
     all_images = set()
-    # Mean-ablate the other parts
     for i in tqdm.trange(attns.shape[1] - args.num_of_last_layers):
         for head in range(attns.shape[2]):
             attns[:, i, head] = np.mean(attns[:, i, head], axis=0, keepdims=True)
-    # Load text:
+    
     with open(
-        #os.path.join(args.input_dir, f"{args.text_descriptions}.npy"), "rb"
         os.path.join(args.input_dir, f"{args.text_descriptions}_{args.model}.npy"), "rb"
     ) as f:
         text_features = np.load(f)
@@ -160,7 +159,7 @@ def main(args):
     ) as w:
         for i in tqdm.trange(attns.shape[1] - args.num_of_last_layers, attns.shape[1]):
             for head in range(attns.shape[2]):
-                print("attns[:, i, head] shape \n" ,  attns[:, i, head].shape)
+                print("attns[:, i, head] shape \n", attns[:, i, head].shape)
                 results, images = replace_with_iterative_removal(
                     attns[:, i, head],
                     text_features,
@@ -177,42 +176,40 @@ def main(args):
                 w.write(f"------------------\n")
                 for text in images:
                     w.write(f"{text}\n")
-        print("attns before mean ablated and replaced \n",attns)
-        print(attns.shape) # (50000, 12, 12, 768)
+        print("attns before mean ablated and replaced \n", attns)
+        print(attns.shape)
         
-        print("\n attns after the sum axis 1,2 \n" , attns.sum(axis = (1,2))) # 50000, 768
-        #mean_ablated_and_replaced = ffns.sum(axis=1) + attns.sum(axis=(1, 2))
-        mean_ablated_and_replaced =  attns.sum(axis=(1, 2))
+        mean_ablated_and_replaced = attns.sum(axis=(1, 2))
         print("\n mean ablated replaced numpy before projection", mean_ablated_and_replaced)
-        print("\n classifier before projection " , projections)
         
-        projections = torch.from_numpy(mean_ablated_and_replaced).float().to(
-            args.device
-        ) @ torch.from_numpy(classifier).float().to(args.device)
+        mean_ablated_tensor = torch.from_numpy(mean_ablated_and_replaced).float()
+        print("\n mean replaced shape ", mean_ablated_tensor.shape)
+        check_summary_statistics(mean_ablated_tensor, "Mean Ablated Tensor")
         
-        print("\n projections shape \n",projections.shape) #torch.Size([50000, 1000])
+        classifier_tensor = torch.from_numpy(classifier).float()
+        print("\n classifier before projection ", classifier)
+        print("\n classifier shape", classifier_tensor.shape)
+        check_summary_statistics(classifier_tensor, "Classifier Tensor")
+        
+        projections = mean_ablated_tensor.to(args.device) @ classifier_tensor.to(args.device)
+        
+        print("\n projections shape \n", projections.shape)
         print("projections \n ", projections)
+        check_summary_statistics(projections, "Projections")
+        
         labels = np.array([i // 50 for i in range(attns.shape[0])])
-        
         labels_tensor = torch.from_numpy(labels)
-        print("labels tensor \n",labels_tensor) #tensor([  0,   0,   0,  ..., 999, 999, 999])
-        
+        print("labels tensor \n", labels_tensor)
         print(labels_tensor.shape)
         
         current_accuracy = (
-            accuracy(projections.cpu(), torch.from_numpy(labels))[0] * 100.0
+            accuracy(projections.cpu(), labels_tensor)[0] * 100.0
         )
         print(
-            f"Current accuracy:",
-            current_accuracy,
-            "\nNumber of texts:",
-            len(all_images),
+            f"Current accuracy:", current_accuracy, "\nNumber of texts:", len(all_images)
         )
         w.write(f"------------------\n")
-        w.write(
-            f"Current accuracy: {current_accuracy}\nNumber of texts: {len(all_images)}"
-        )
-
+        w.write(f"Current accuracy: {current_accuracy}\nNumber of texts: {len(all_images)}")
 
 if __name__ == "__main__":
     args = get_args_parser()
