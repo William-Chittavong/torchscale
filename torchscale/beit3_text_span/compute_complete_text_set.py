@@ -131,13 +131,17 @@ def main(args):
     ) as f:
         attns = np.load(f)
     with open(
+        os.path.join(args.input_dir, f"{args.dataset}_ffn_{args.model}.npy"), "rb"
+    ) as f:
+        ffns = np.load(f)  # [b, l+1, d]
+    with open(
         os.path.join(args.input_dir, f"{args.dataset}_classifier_{args.model}.npy"),
         "rb",
     ) as f:
         classifier = np.load(f)
     
-    print(f"Number of layers: {attns.shape[1]}")
-    print(f"\n attn shape: {attns.shape}")
+    # print(f"Number of layers: {attns.shape[1]}")
+    # print(f"\n attn shape: {attns.shape}")
 
     all_images = set()
     for i in tqdm.trange(attns.shape[1] - args.num_of_last_layers):
@@ -176,38 +180,38 @@ def main(args):
                 w.write(f"------------------\n")
                 for text in images:
                     w.write(f"{text}\n")
-        print("attns before mean ablated and replaced \n", attns)
-        print(attns.shape)
+        # print("attns before mean ablated and replaced \n", attns)
+        # print(attns.shape)
         
-        mean_ablated_and_replaced = attns.sum(axis=(1, 2))
-        print("\n mean ablated replaced numpy before projection", mean_ablated_and_replaced)
+        mean_ablated_and_replaced = ffns.sum(axis = 1) + attns.sum(axis=(1, 2))
+        #print("\n mean ablated replaced numpy before projection", mean_ablated_and_replaced)
         
         mean_ablated_tensor = torch.from_numpy(mean_ablated_and_replaced).float()
-        print("\n mean replaced shape ", mean_ablated_tensor.shape)
-        check_summary_statistics(mean_ablated_tensor, "Mean Ablated Tensor")
+        # print("\n mean replaced shape ", mean_ablated_tensor.shape)
+        # check_summary_statistics(mean_ablated_tensor, "Mean Ablated Tensor")
         
         classifier_tensor = torch.from_numpy(classifier).float()
-        print("\n classifier before projection ", classifier)
-        print("\n classifier shape", classifier_tensor.shape)
-        check_summary_statistics(classifier_tensor, "Classifier Tensor")
+        # print("\n classifier before projection ", classifier)
+        # print("\n classifier shape", classifier_tensor.shape)
+        # check_summary_statistics(classifier_tensor, "Classifier Tensor")
         
         projections = mean_ablated_tensor.to(args.device) @ classifier_tensor.to(args.device)
         
-        print("\n projections shape \n", projections.shape)
-        print("projections \n ", projections)
-        check_summary_statistics(projections, "Projections")
+        # print("\n projections shape \n", projections.shape)
+        # print("projections \n ", projections)
+        # check_summary_statistics(projections, "Projections")
         
         labels = np.array([i // 50 for i in range(attns.shape[0])])
         labels_tensor = torch.from_numpy(labels)
-        print("labels tensor \n", labels_tensor)
-        print(labels_tensor.shape)
+        # print("labels tensor \n", labels_tensor)
+        # print(labels_tensor.shape)
         
         current_accuracy = (
             accuracy(projections.cpu(), labels_tensor)[0] * 100.0
         )
-        print(
-            f"Current accuracy:", current_accuracy, "\nNumber of texts:", len(all_images)
-        )
+        # print(
+        #     f"Current accuracy:", current_accuracy, "\nNumber of texts:", len(all_images)
+        # )
         w.write(f"------------------\n")
         w.write(f"Current accuracy: {current_accuracy}\nNumber of texts: {len(all_images)}")
 
