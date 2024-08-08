@@ -26,7 +26,7 @@ class PRSLogger(object):
     @torch.no_grad()
     def compute_attentions_spatial(self, ret):
         #bias_term = self.model.beit3.encoder.layers[self.current_layer].self_attn.out_proj.B.bias
-
+        print("ret shape by itself: \n",ret.shape)
         self.current_layer += 1             # b n h d 
         return_value = ret.detach().cpu() # after stacking:  torch.Size([2, 12, 197, 12, 768])
        

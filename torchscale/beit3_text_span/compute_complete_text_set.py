@@ -163,7 +163,7 @@ def main(args):
     ) as w:
         for i in tqdm.trange(attns.shape[1] - args.num_of_last_layers, attns.shape[1]):
             for head in range(attns.shape[2]):
-                print("attns[:, i, head] shape \n", attns[:, i, head].shape)
+               # print("attns[:, i, head] shape \n", attns[:, i, head].shape)
                 results, images = replace_with_iterative_removal(
                     attns[:, i, head],
                     text_features,
@@ -209,9 +209,9 @@ def main(args):
         current_accuracy = (
             accuracy(projections.cpu(), labels_tensor)[0] * 100.0
         )
-        # print(
-        #     f"Current accuracy:", current_accuracy, "\nNumber of texts:", len(all_images)
-        # )
+        print(
+            f"Current accuracy:", current_accuracy, "\nNumber of texts:", len(all_images)
+        )
         w.write(f"------------------\n")
         w.write(f"Current accuracy: {current_accuracy}\nNumber of texts: {len(all_images)}")
 
