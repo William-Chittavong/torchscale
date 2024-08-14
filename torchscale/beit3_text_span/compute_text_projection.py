@@ -114,7 +114,7 @@ def main(args):
    
     
     # can modify later to add parse argument and create model function with choice of beit3 models. 
-    model = create_beit3_retrieval_model(model_size='base', img_size= args.img_size)
+    model = create_beit3_retrieval_model(model_size=args.model_size, img_size= args.img_size)
     
     
     load_model_and_may_interpolate(args.checkpoint_path, model, model_key='model', model_prefix='')
