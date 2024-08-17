@@ -244,7 +244,7 @@ class BEiT3ForRetrieval(BEiT3Wrapper):
         )
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
-    def forward(self, image=None, text_description=None, padding_mask=None, only_infer=False, **kwargs):
+    def forward(self, image=None, text_description=None, padding_mask=None, only_infer=True, **kwargs):
         if image is not None:
             outputs = self.beit3(
                 textual_tokens=None, 
