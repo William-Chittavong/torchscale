@@ -89,7 +89,7 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     
     
     target_layers = [model.beit3.encoder.layers[-2].final_layer_norm]
-    cam = GradCAM(model=model, target_layers=target_layers, 
+    cam = GradCAM(model=model(only_infer =True), target_layers=target_layers, 
                   reshape_transform=reshape_transform)
 
  
