@@ -13,6 +13,7 @@ from pathlib import Path
 import tqdm
 
 from torchscale.clip_utils.imagenet_segmentation import ImagenetSegmentation
+from torchscale.clip_utils.coco_segmentation import COCOSegmentation
 from torchscale.clip_utils.segmentation_utils import (batch_pix_accuracy, batch_intersection_union, 
                                       get_ap_scores, Saver)
 from sklearn.metrics import precision_recall_curve
@@ -31,6 +32,7 @@ def get_args_parser():
                         help='')
     parser.add_argument('--train_dataset', type=str, default='imagenet_seg', help='The name of the dataset')
     parser.add_argument('--classifier_dataset', type=str, default='imagenet', help='The name of the classifier dataset')
+    
     parser.add_argument('--image_size', default=224, type=int, help='Image size')
     parser.add_argument('--thr', type=float, default=0.,
                         help='threshold')
@@ -50,6 +52,7 @@ def get_args_parser():
                         help='path where to save')
     parser.add_argument('--device', default='cuda:0',
                         help='device to use for testing')
+    
     return parser
 
 
@@ -177,9 +180,15 @@ def main(args):
         args.image_size,
         is_train=False,
     )
-    ds = ImagenetSegmentation(args.data_path,
-                            transform=preprocess, 
-                            target_transform=target_transform)
+    if args.classifier_dataset == "imagenet":
+        ds = ImagenetSegmentation(args.data_path,
+                                transform=preprocess, 
+                                target_transform=target_transform)
+    else:
+        #add correct ending path
+        ann_file = args.data_path + ""
+        ds = COCOSegmentation(args.data_path, ann_file,transform=preprocess , target_transform= target_transform)
+    
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, drop_last=False)
     iterator = tqdm.tqdm(dl)
     # Saver
@@ -196,9 +205,9 @@ def main(args):
 
         images = image.to(args.device)
         labels = labels.to(args.device)
-        print("\n labels inside for loop of main ", labels) # 1 , 224,224
+        #print("\n labels inside for loop of main ", labels) # 1 , 224,224
         correct, labeled, inter, union, ap, pred, target = eval_batch(model, prs, images, labels, batch_idx, args, classifier, saver)
-        print("\n target inside for loop of main ", target) # 50176
+        #print("\n target inside for loop of main ", target) # 50176
         predictions.append(pred)
         targets.append(target)
 

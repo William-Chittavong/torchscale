@@ -33,9 +33,9 @@ from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 # Args
 def get_args_parser():
     parser = argparse.ArgumentParser(description='Segmentation scores')
-    parser.add_argument('--save_img', action='store_true',
-                        default=True,
-                        help='')
+    # parser.add_argument('--save_img', action='store_true',
+    #                     default=True,
+    #                     help='')
     parser.add_argument('--train_dataset', type=str, default='imagenet_seg', help='The name of the dataset')
     parser.add_argument('--classifier_dataset', type=str, default='imagenet', help='The name of the classifier dataset')
     parser.add_argument('--image_size', default=224, type=int, help='Image size')
@@ -43,7 +43,7 @@ def get_args_parser():
                         help='threshold')
     parser.add_argument('--data_path', default='imagenet_seg/gtsegs_ijcv.mat', type=str,
                             help='dataset path')
-    parser.add_argument('--num_workers', default=10, type=int)
+    parser.add_argument('--num_workers', default=1, type=int)
     parser.add_argument('--classifier_dir', default='./output_dir/')
     parser.add_argument('--batch_size', default=1, type=int,
                         help='Batch size')
@@ -59,13 +59,22 @@ def get_args_parser():
                         help='device to use for testing')
     return parser
 def check_and_print_nan(name, var, location):
-    if isinstance(var, np.ndarray) and np.isnan(var).any():
-        print(f"NaN detected in {name} at {location}")
-    elif isinstance(var, torch.Tensor) and torch.isnan(var).any():
-        print(f"NaN detected in {name} at {location}")
+    if isinstance(var, np.ndarray):
+        if np.isnan(var).any():
+            print(f"NaN detected in {name} at {location}")
+            print(f"Shape: {var.shape}")
+            print(f"NaN count: {np.isnan(var).sum()}")
+            print(f"Min: {np.nanmin(var)}, Max: {np.nanmax(var)}")
+    elif isinstance(var, torch.Tensor):
+        if torch.isnan(var).any():
+            print(f"NaN detected in {name} at {location}")
+            print(f"Shape: {var.shape}")
+            print(f"NaN count: {torch.isnan(var).sum().item()}")
+            print(f"Min: {torch.nanmin(var).item()}, Max: {torch.nanmax(var).item()}")
 def reshape_transform(tensor, height=14, width=14):
     #print(tensor.shape) # b , n, d torch.Size([1, 257, 1280])
-    print(tensor.shape)
+    #print(tensor.shape) # torch.Size([1, 197, 1024])
+
     result = tensor[:, 1 :  , :].reshape(tensor.size(0),
         height, width, tensor.size(2))
 
@@ -74,22 +83,22 @@ def reshape_transform(tensor, height=14, width=14):
     result = result.transpose(2, 3).transpose(1, 2)
     return result
 
-def eval_batch(model, prs, image, labels, index, args, classifier, saver):
+def eval_batch(model, image, labels, index, args, classifier):
     # Save input image
-    if args.save_img:
-        # Saves one image from each batch
-        img = image[0].permute(1, 2, 0).data.cpu().numpy()
-        img = 255 * (img - img.min()) / (img.max() - img.min())
-        img = img.astype('uint8')
-        Image.fromarray(img, 'RGB').save(os.path.join(saver.results_dir, 'input/{}_input.png'.format(index)))
-        Image.fromarray((labels.repeat(3, 1, 1).permute(1, 2, 0).data.cpu().numpy() * 255).astype('uint8'), 'RGB').save(
-            os.path.join(saver.results_dir, 'input/{}_mask.png'.format(index)))
+    # if args.save_img:
+    #     # Saves one image from each batch
+    #     img = image[0].permute(1, 2, 0).data.cpu().numpy()
+    #     img = 255 * (img - img.min()) / (img.max() - img.min())
+    #     img = img.astype('uint8')
+    #     Image.fromarray(img, 'RGB').save(os.path.join(saver.results_dir, 'input/{}_input.png'.format(index)))
+    #     Image.fromarray((labels.repeat(3, 1, 1).permute(1, 2, 0).data.cpu().numpy() * 255).astype('uint8'), 'RGB').save(
+    #         os.path.join(saver.results_dir, 'input/{}_mask.png'.format(index)))
     
     # Get the model attention maps:
     
     
     target_layers = [model.beit3.encoder.layers[-2].final_layer_norm]
-    cam = GradCAM(model=model(only_infer =True), target_layers=target_layers, 
+    cam = GradCAM(model=model, target_layers=target_layers, 
                   reshape_transform=reshape_transform)
 
  
@@ -124,28 +133,55 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     Res_1_AP[Res_1_AP != Res_1_AP] = 0
     Res_0_AP[Res_0_AP != Res_0_AP] = 0
 
+    
+    
+    # check_and_print_nan("representation", representation, f"eval_batch (index: {index})")
+    # check_and_print_nan("classifier", classifier, f"eval_batch (index: {index})")
+    # check_and_print_nan("chosen_class", chosen_class, f"eval_batch (index: {index})")
+    # check_and_print_nan("grayscale_cam", grayscale_cam, f"eval_batch (index: {index})")
+    # check_and_print_nan("Res", Res, f"eval_batch (index: {index})")
+    # check_and_print_nan("Res_1", Res_1, f"eval_batch (index: {index})")
+    # check_and_print_nan("Res_0", Res_0, f"eval_batch (index: {index})")
+    # check_and_print_nan("Res_1_AP", Res_1_AP, f"eval_batch (index: {index})")
+    # check_and_print_nan("Res_0_AP", Res_0_AP, f"eval_batch (index: {index})")
+
+    # # Check pred before clamp
+    # check_and_print_nan("pred (before clamp)", Res, f"eval_batch (index: {index})")
     # TEST
     pred = Res.clamp(min=args.thr) / Res.max()
+    # Res_clamped = Res.clamp(min=args.thr)
+    # Res_max = Res_clamped.max()
+    # if Res_max == 0:
+    #     print(f"Warning: Res_max is zero at index {index}")
+    #     pred = torch.zeros_like(Res_clamped)
+    # else:
+    #     pred = Res_clamped / Res_max
+
+    # check_and_print_nan("pred (after division)", pred, f"eval_batch (index: {index})")
+    
     pred = pred.view(-1).data.cpu().numpy()
     target = labels.view(-1).data.cpu().numpy()
 
     output = torch.cat((Res_0, Res_1), 1)
     output_AP = torch.cat((Res_0_AP, Res_1_AP), 1)
 
-    if args.save_img:
-        # Save predicted mask
-        mask = F.interpolate(Res_1, [224, 224], mode='bilinear')
-        mask = mask[0].squeeze().data.cpu().numpy()
-        mask = 255 * mask
-        mask = mask.astype('uint8')
-        imageio.imsave(os.path.join(args.exp_img_path, 'mask_' + str(index) + '.jpg'), mask)
+    # hm max division by zero NaN issue. have to fix.
+    
+    
+    # if args.save_img:
+    #     # Save predicted mask
+    #     mask = F.interpolate(Res_1, [224, 224], mode='bilinear')
+    #     mask = mask[0].squeeze().data.cpu().numpy()
+    #     mask = 255 * mask
+    #     mask = mask.astype('uint8')
+    #     imageio.imsave(os.path.join(args.exp_img_path, 'mask_' + str(index) + '.jpg'), mask)
 
-        relevance = F.interpolate(Res, [224, 224], mode='bicubic')
-        relevance = relevance[0].permute(1, 2, 0).data.cpu().numpy()
-        hm = np.sum(relevance, axis=-1)
-        hm = np.clip(255.* hm / hm.max(), 0, 255.).astype(np.uint8)
-        high = cv2.cvtColor(cv2.applyColorMap(hm, cv2.COLORMAP_JET), cv2.COLOR_BGR2RGB)
-        imageio.imsave(os.path.join(args.exp_img_path, 'heatmap_' + str(index) + '.jpg'), high)
+    #     relevance = F.interpolate(Res, [224, 224], mode='bicubic')
+    #     relevance = relevance[0].permute(1, 2, 0).data.cpu().numpy()
+    #     hm = np.sum(relevance, axis=-1)
+    #     hm = np.clip(255.* hm / hm.max(), 0, 255.).astype(np.uint8)
+    #     high = cv2.cvtColor(cv2.applyColorMap(hm, cv2.COLORMAP_JET), cv2.COLOR_BGR2RGB)
+    #     imageio.imsave(os.path.join(args.exp_img_path, 'heatmap_' + str(index) + '.jpg'), high)
 
     # Evaluate Segmentation
     batch_inter, batch_union, batch_correct, batch_label = 0, 0, 0, 0
@@ -162,14 +198,14 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     batch_ap += ap
     
           
-    check_and_print_nan("pred", pred, f"eval_batch (index: {index})")
-    check_and_print_nan("target", target, f"eval_batch (index: {index})")
-    check_and_print_nan("correct", correct, f"eval_batch (index: {index})")
-    check_and_print_nan("labeled", labeled, f"eval_batch (index: {index})")
-    check_and_print_nan("inter", inter, f"eval_batch (index: {index})")
-    check_and_print_nan("union", union, f"eval_batch (index: {index})")
-    check_and_print_nan("ap", ap, f"eval_batch (index: {index})")
-    
+    # check_and_print_nan("pred", pred, f"eval_batch (index: {index})")
+    # check_and_print_nan("target", target, f"eval_batch (index: {index})")
+    # check_and_print_nan("correct", correct, f"eval_batch (index: {index})")
+    # check_and_print_nan("labeled", labeled, f"eval_batch (index: {index})")
+    # check_and_print_nan("inter", inter, f"eval_batch (index: {index})")
+    # check_and_print_nan("union", union, f"eval_batch (index: {index})")
+    # check_and_print_nan("ap", ap, f"eval_batch (index: {index})")
+    torch.cuda.empty_cache()
     return batch_correct, batch_label, batch_inter, batch_union, batch_ap, pred, target
 
 
@@ -200,7 +236,7 @@ def main(args):
     
 
    
-    prs = hook_prs_logger(model, args.device , spatial = True)
+    #prs = hook_prs_logger(model, args.device , spatial = True)
     # Data
     target_transform = transforms.Compose([
         transforms.Resize((args.image_size, args.image_size), Image.NEAREST),
@@ -215,7 +251,7 @@ def main(args):
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, drop_last=False)
     iterator = tqdm.tqdm(dl)
     # Saver
-    saver = _create_saver_and_folders(args) 
+    #saver = _create_saver_and_folders(args) 
     # Classifier
     with open(os.path.join(args.classifier_dir, f'{args.classifier_dataset}_classifier_{args.model}.npy'), 'rb') as f:
         classifier = np.load(f)
@@ -228,9 +264,11 @@ def main(args):
 
         images = image.to(args.device)
         labels = labels.to(args.device)
-        print("\n labels inside for loop of main ", labels) # 1 , 224,224
-        correct, labeled, inter, union, ap, pred, target = eval_batch(model, prs, images, labels, batch_idx, args, classifier, saver)
-        print("\n target inside for loop of main ", target) # 50176
+        #print("\n labels inside for loop of main ", labels) # 1 , 224,224
+        #correct, labeled, inter, union, ap, pred, target = eval_batch(model, images, labels, batch_idx, args, classifier, saver)
+        
+        correct, labeled, inter, union, ap, pred, target = eval_batch(model, images, labels, batch_idx, args, classifier)
+        #print("\n target inside for loop of main ", target) # 50176
         predictions.append(pred)
         targets.append(target)
 
@@ -248,19 +286,19 @@ def main(args):
     predictions = np.concatenate(predictions)
     targets = np.concatenate(targets)
     pr, rc, thr = precision_recall_curve(targets, predictions)
-    np.save(os.path.join(saver.experiment_dir, 'precision.npy'), pr)
-    np.save(os.path.join(saver.experiment_dir, 'recall.npy'), rc)
+    # np.save(os.path.join(saver.experiment_dir, 'precision.npy'), pr)
+    # np.save(os.path.join(saver.experiment_dir, 'recall.npy'), rc)
 
-    txtfile = os.path.join(saver.experiment_dir, 'result_mIoU_%.4f.txt' % mIoU)
-    fh = open(txtfile, 'w')
+    # txtfile = os.path.join(saver.experiment_dir, 'result_mIoU_%.4f.txt' % mIoU)
+    # fh = open(txtfile, 'w')
     print("Mean IoU over %d classes: %.4f\n" % (2, mIoU))
     print("Pixel-wise Accuracy: %2.2f%%\n" % (pixAcc * 100))
     print("Mean AP over %d classes: %.4f\n" % (2, mAp))
     
-    fh.write("Mean IoU over %d classes: %.4f\n" % (2, mIoU))
-    fh.write("Pixel-wise Accuracy: %2.2f%%\n" % (pixAcc * 100))
-    fh.write("Mean AP over %d classes: %.4f\n" % (2, mAp))
-    fh.close()
+    # fh.write("Mean IoU over %d classes: %.4f\n" % (2, mIoU))
+    # fh.write("Pixel-wise Accuracy: %2.2f%%\n" % (pixAcc * 100))
+    # fh.write("Mean AP over %d classes: %.4f\n" % (2, mAp))
+    # fh.close()
     
 
 if __name__ == '__main__':
