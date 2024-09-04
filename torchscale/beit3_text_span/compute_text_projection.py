@@ -17,6 +17,7 @@ import tqdm
 from torchscale.clip_utils.openai_templates  import OPENAI_IMAGENET_TEMPLATES
 from torchscale.clip_utils.imagenet_classes import imagenet_classes
 from torchscale.clip_utils.cub_classes import cub_classes, waterbird_classes
+from torchscale.clip_utils.coco_classes import coco_classes
 
 from torchscale.model.BEiT3 import create_beit3_retrieval_model
 from torchscale.component.beit3_utils import load_model_and_may_interpolate
@@ -128,7 +129,9 @@ def main(args):
         'imagenet': imagenet_classes, 
         'waterbirds': cub_classes, 
         'binary_waterbirds': waterbird_classes, 
-        'cub': cub_classes}[args.dataset]
+        'cub': cub_classes,
+        "coco": coco_classes}[args.dataset]
+
     classifier = zero_shot_classifier(model, tokenizer, classes, OPENAI_IMAGENET_TEMPLATES, args.device)
     with open(os.path.join(args.output_dir, f'{args.dataset}_classifier_{args.model}.npy'), 'wb') as f:
         np.save(f, classifier.detach().cpu().numpy())
