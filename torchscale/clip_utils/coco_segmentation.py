@@ -144,5 +144,5 @@ class COCOSegmentation(data.Dataset):
 
     #     return image, target
 
-    def __len__(self):
-        return len(self.ids)
+    # def __len__(self):
+    #     return len(self.ids)
