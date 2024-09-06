@@ -38,7 +38,7 @@ def get_args_parser():
                         help='threshold')
     parser.add_argument('--data_path', default='imagenet_seg/gtsegs_ijcv.mat', type=str,
                             help='dataset path')
-    parser.add_argument("--annotations",default="/home/william/project/coco_seg/annotations/instances_val2017.json", type = str , help = "annotation file")
+    #parser.add_argument("--annotations",default="/home/william/project/coco_seg/annotations/instances_val2017.json", type = str , help = "annotation file")
     parser.add_argument('--num_workers', default=10, type=int)
     parser.add_argument('--classifier_dir', default='./output_dir/')
     parser.add_argument('--batch_size', default=1, type=int,
@@ -186,8 +186,10 @@ def main(args):
                                 transform=preprocess, 
                                 target_transform=target_transform)
     else:
-        #add correct ending path
-        ds = COCOSegmentation(args.data_path, args.annotations,transform=preprocess , target_transform= target_transform)
+        ds = COCOSegmentation(root=args.data_path,
+                              split='val',  # or 'train' depending on what you want to evaluate
+                              transform=preprocess,
+                              target_transform=target_transform)
     
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, drop_last=False)
     iterator = tqdm.tqdm(dl)
