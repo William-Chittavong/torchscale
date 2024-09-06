@@ -59,7 +59,8 @@ class COCOSegmentation(data.Dataset):
             target = self.target_transform(target)
         
         # Ensure target is a long tensor
-        target = target.squeeze().long()
+        target = transforms.ToTensor()(target).squeeze().long()
+
         
         return img, target
 
