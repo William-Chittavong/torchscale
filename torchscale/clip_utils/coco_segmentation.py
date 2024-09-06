@@ -20,6 +20,17 @@ class COCOSegmentation(data.Dataset):
         self.mask_dir = os.path.join(self.root, 'masks')
         
         self.images = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
+        # Default transforms if none provided
+        if self.transform is None:
+            self.transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+        
+        if self.target_transform is None:
+            self.target_transform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
         
     def __len__(self):
         return len(self.images)
