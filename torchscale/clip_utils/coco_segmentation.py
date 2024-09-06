@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-class COCOSegmentation(data.Dataset):
+class COCOSegmentation(Dataset):
     def __init__(self, root, split='train', transform=None, target_transform=None):
         self.root = os.path.join(root, split)
         self.split = split
@@ -57,7 +57,9 @@ class COCOSegmentation(data.Dataset):
         
         if self.target_transform is not None:
             target = self.target_transform(target)
-            target = torch.squeeze(target).long()  # Convert to long tensor
+        
+        # Ensure target is a long tensor
+        target = target.squeeze().long()
         
         return img, target
 
