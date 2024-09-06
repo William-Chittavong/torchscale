@@ -2,6 +2,8 @@ from pycocotools.coco import COCO
 import torch
 import os
 import torch.utils.data as data
+import torch
+from torchvision import transforms
 from PIL import Image
 import numpy as np
 
@@ -23,26 +25,23 @@ class COCOSegmentation(data.Dataset):
         return len(self.images)
     
     def __getitem__(self, index):
-        img_name = self.images[index]
-        mask_name = img_name.replace('.jpg', '.png')
-        
-        # Load image
-        image_path = os.path.join(self.image_dir, img_name)
-        image = Image.open(image_path).convert('RGB')
-        
-        # Load mask
-        mask_path = os.path.join(self.mask_dir, mask_name)
-        mask = Image.open(mask_path).convert('L')  # Convert to grayscale
-        
-        if self.transform is not None:
+            img_name = self.images[index]
+            mask_name = img_name.replace('.jpg', '.png')
+            
+            # Load image
+            image_path = os.path.join(self.image_dir, img_name)
+            image = Image.open(image_path).convert('RGB')
+            
+            # Load mask
+            mask_path = os.path.join(self.mask_dir, mask_name)
+            mask = Image.open(mask_path).convert('L')  # Convert to grayscale
+            
+            # Apply transforms
             image = self.transform(image)
-        
-        if self.target_transform is not None:
             mask = self.target_transform(mask)
-        else:
-            mask = torch.from_numpy(np.array(mask)).long()
-        
-        return image, mask
+            
+            return image, mask
+
 
 # class COCOSegmentation(Dataset):
 #     def __init__(self, root, annFile, transform=None, target_transform=None):
