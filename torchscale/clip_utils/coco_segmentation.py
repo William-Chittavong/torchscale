@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-class COCOSegmentation(Dataset):
+class COCOSegmentation(data.Dataset):
     def __init__(self, root, split='train', transform=None, target_transform=None):
         self.root = os.path.join(root, split)
         self.split = split
