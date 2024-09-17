@@ -8,61 +8,97 @@ from PIL import Image
 import numpy as np
 
 
-
-
-class COCOSegmentation(data.Dataset):
-    def __init__(self, root, split='train', transform=None, target_transform=None):
-        self.root = os.path.join(root, split)
-        self.split = split
+class CocoSegmentation(data.Dataset):
+    def __init__(self, path, transform=None, target_transform=None, split='val'):
+        self.path = path
         self.transform = transform
         self.target_transform = target_transform
         
-        self.image_dir = os.path.join(self.root, 'images')
-        self.mask_dir = os.path.join(self.root, 'masks')
+        # Define the image and mask directories based on split
+        self.image_dir = os.path.join(path, split, 'images')
+        self.mask_dir = os.path.join(path, split, 'masks')
         
-        self.images = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
-        
-        # Default transforms if none provided
-        if self.transform is None:
-            self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
-        
-        if self.target_transform is None:
-            self.target_transform = transforms.Compose([
-                transforms.Resize((224, 224), interpolation=Image.NEAREST),
-                transforms.ToTensor(),
-            ])
+        # Load image filenames
+        self.image_filenames = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
+        self.data_length = len(self.image_filenames)
 
-    def __len__(self):
-        return len(self.images)
-    
     def __getitem__(self, index):
-        img_name = self.images[index]
-        mask_name = img_name.replace('.jpg', '.png')
+        img_name = self.image_filenames[index]
+        img_path = os.path.join(self.image_dir, img_name)
         
         # Load image
-        image_path = os.path.join(self.image_dir, img_name)
-        img = Image.open(image_path).convert('RGB')
+        img = Image.open(img_path).convert('RGB')
         
-        # Load mask
+        # Load corresponding mask
+        mask_name = img_name.replace('.jpg', '.png')
         mask_path = os.path.join(self.mask_dir, mask_name)
-        target = Image.open(mask_path).convert('L')  # Convert to grayscale
-        
-        # Apply transforms
+        target = Image.open(mask_path)
+
         if self.transform is not None:
             img = self.transform(img)
-        
+
         if self.target_transform is not None:
             target = self.target_transform(target)
+
+        return img, target
+
+    def __len__(self):
+        return self.data_length
+
+
+# class COCOSegmentation(data.Dataset):
+#     def __init__(self, root, split='train', transform=None, target_transform=None):
+#         self.root = os.path.join(root, split)
+#         self.split = split
+#         self.transform = transform
+#         self.target_transform = target_transform
         
-        # Ensure target is a long tensor
-        target = transforms.ToTensor()(target).squeeze().long()
+#         self.image_dir = os.path.join(self.root, 'images')
+#         self.mask_dir = os.path.join(self.root, 'masks')
+        
+#         self.images = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
+        
+#         # Default transforms if none provided
+#         if self.transform is None:
+#             self.transform = transforms.Compose([
+#                 transforms.Resize((224, 224)),
+#                 transforms.ToTensor(),
+#                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+#             ])
+        
+#         if self.target_transform is None:
+#             self.target_transform = transforms.Compose([
+#                 transforms.Resize((224, 224), interpolation=Image.NEAREST),
+#                 transforms.ToTensor(),
+#             ])
+
+#     def __len__(self):
+#         return len(self.images)
+    
+#     def __getitem__(self, index):
+#         img_name = self.images[index]
+#         mask_name = img_name.replace('.jpg', '.png')
+        
+#         # Load image
+#         image_path = os.path.join(self.image_dir, img_name)
+#         img = Image.open(image_path).convert('RGB')
+        
+#         # Load mask
+#         mask_path = os.path.join(self.mask_dir, mask_name)
+#         target = Image.open(mask_path).convert('L')  # Convert to grayscale
+        
+#         # Apply transforms
+#         if self.transform is not None:
+#             img = self.transform(img)
+        
+#         if self.target_transform is not None:
+#             target = self.target_transform(target)
+        
+#         # Ensure target is a long tensor
+#         target = transforms.ToTensor()(target).squeeze().long()
 
         
-        return img, target
+#         return img, target
 
 
 # class COCOSegmentation(Dataset):
