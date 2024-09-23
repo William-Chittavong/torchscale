@@ -186,7 +186,7 @@ def main(args):
                                 transform=preprocess, 
                                 target_transform=target_transform)
     else:
-        ds = COCOSegmentation(root=args.data_path,
+        ds = COCOSegmentation(path=args.data_path,
                               split='val',  # or 'train' depending on what you want to evaluate
                               transform=preprocess,
                               target_transform=target_transform)

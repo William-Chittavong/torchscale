@@ -8,6 +8,8 @@ from PIL import Image
 import numpy as np
 
 
+
+
 class COCOSegmentation(data.Dataset):
     def __init__(self, path, transform=None, target_transform=None, split='val'):
         self.path = path
@@ -22,6 +24,18 @@ class COCOSegmentation(data.Dataset):
         self.image_filenames = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
         self.data_length = len(self.image_filenames)
 
+        # Default transforms if none provided
+        if self.transform is None:
+            self.transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+        
+        if self.target_transform is None:
+            self.target_transform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+
     def __getitem__(self, index):
         img_name = self.image_filenames[index]
         img_path = os.path.join(self.image_dir, img_name)
@@ -34,11 +48,12 @@ class COCOSegmentation(data.Dataset):
         mask_path = os.path.join(self.mask_dir, mask_name)
         target = Image.open(mask_path)
 
-        if self.transform is not None:
-            img = self.transform(img)
+        # Apply transforms
+        img = self.transform(img)
+        target = self.target_transform(target)
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        # Ensure target is a long tensor
+        target = target.long()
 
         return img, target
 
