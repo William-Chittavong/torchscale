@@ -10,55 +10,51 @@ import numpy as np
 
 
 
-class COCOSegmentation(data.Dataset):
-    def __init__(self, path, transform=None, target_transform=None, split='val'):
-        self.path = path
+
+
+class COCOSegmentation:
+    def __init__(self, path, split='val', transform=None, target_transform=None):
+        self.root = path
+        self.split = split
         self.transform = transform
         self.target_transform = target_transform
         
-        # Define the image and mask directories based on split
-        self.image_dir = os.path.join(path, split, 'images')
-        self.mask_dir = os.path.join(path, split, 'masks')
-        
-        # Load image filenames
-        self.image_filenames = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
-        self.data_length = len(self.image_filenames)
-
-        # Default transforms if none provided
-        if self.transform is None:
-            self.transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
-        
-        if self.target_transform is None:
-            self.target_transform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
+        ann_file = f'{self.root}/annotations/instances_{self.split}2017.json'
+        self.coco = COCO(ann_file)
+        self.ids = list(sorted(self.coco.imgs.keys()))
 
     def __getitem__(self, index):
-        img_name = self.image_filenames[index]
-        img_path = os.path.join(self.image_dir, img_name)
-        
+        img_id = self.ids[index]
+        ann_ids = self.coco.getAnnIds(imgIds=img_id)
+        anns = self.coco.loadAnns(ann_ids)
+
         # Load image
+        img_info = self.coco.loadImgs(img_id)[0]
+        img_path = f"{self.root}/{self.split}2017/{img_info['file_name']}"
         img = Image.open(img_path).convert('RGB')
-        
-        # Load corresponding mask
-        mask_name = img_name.replace('.jpg', '.png')
-        mask_path = os.path.join(self.mask_dir, mask_name)
-        target = Image.open(mask_path)
 
-        # Apply transforms
-        img = self.transform(img)
-        target = self.target_transform(target)
+        # Create mask
+        mask = Image.fromarray(self._create_mask(img_info, anns))
 
-        # Ensure target is a long tensor
-        target = target.long()
+        if self.transform is not None:
+            img = self.transform(img)
 
-        return img, target
+        if self.target_transform is not None:
+            mask = self.target_transform(mask)
+
+        # Convert mask to tensor and then to long type
+        mask = torch.from_numpy(np.array(mask)).long()
+
+        return img, mask
+
+    def _create_mask(self, img_info, anns):
+        mask = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
+        for ann in anns:
+            mask = np.maximum(mask, self.coco.annToMask(ann))
+        return mask
 
     def __len__(self):
-        return self.data_length
+        return len(self.ids)
 
 
 # class COCOSegmentation(data.Dataset):
