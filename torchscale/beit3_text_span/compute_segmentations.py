@@ -24,6 +24,10 @@ from torchscale.component.transform import visualization_preprocess, image_grid 
 from torchscale.model.BEiT3 import create_beit3_retrieval_model
 
 from torchscale.component.beit3_utils import load_model_and_may_interpolate
+
+
+import fiftyone as fo
+import fifyone.zoo as foz
 # Args
 def get_args_parser():
     parser = argparse.ArgumentParser(description='Segmentation scores')
@@ -181,15 +185,22 @@ def main(args):
         args.image_size,
         is_train=False,
     )
-    if "imagenet" in args.classifier_dataset:
-        ds = ImagenetSegmentation(args.data_path,
-                                transform=preprocess, 
-                                target_transform=target_transform)
-    else:
-        ds = COCOSegmentation(path=args.data_path,
-                              split='val',  # or 'train' depending on what you want to evaluate
-                              transform=preprocess,
-                              target_transform=target_transform)
+    # if "imagenet" in args.classifier_dataset:
+    #     ds = ImagenetSegmentation(args.data_path,
+    #                             transform=preprocess, 
+    #                             target_transform=target_transform)
+    # else:
+    #     ds = COCOSegmentation(path=args.data_path,
+    #                           split='val',  # or 'train' depending on what you want to evaluate
+    #                           transform=preprocess,
+    #                           target_transform=target_transform)
+    
+    
+    ds = foz.load_zoo_dataset(
+        "coco-2017",
+        split="validation",
+        label_types=["segmentations"]
+    )
     
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, drop_last=False)
     iterator = tqdm.tqdm(dl)
