@@ -11,7 +11,6 @@ import numpy as np
 
 
 
-
 class COCOSegmentation:
     def __init__(self, path, split='val', transform=None, target_transform=None):
         self.root = path
@@ -19,22 +18,25 @@ class COCOSegmentation:
         self.transform = transform
         self.target_transform = target_transform
         
-        ann_file = f'{self.root}/annotations/instances_{self.split}2017.json'
-        self.coco = COCO(ann_file)
-        self.ids = list(sorted(self.coco.imgs.keys()))
+        self.image_dir = os.path.join(self.root, self.split, 'images')
+        self.mask_dir = os.path.join(self.root, self.split, 'masks')
+        
+        self.images = sorted([f for f in os.listdir(self.image_dir) if f.endswith('.jpg') or f.endswith('.jpeg')])
+        self.masks = sorted([f for f in os.listdir(self.mask_dir) if f.endswith('.png')])
+        
+        assert len(self.images) == len(self.masks), "Number of images and masks should be the same"
 
     def __getitem__(self, index):
-        img_id = self.ids[index]
-        ann_ids = self.coco.getAnnIds(imgIds=img_id)
-        anns = self.coco.loadAnns(ann_ids)
+        img_name = self.images[index]
+        mask_name = self.masks[index]
 
         # Load image
-        img_info = self.coco.loadImgs(img_id)[0]
-        img_path = f"{self.root}/{self.split}2017/{img_info['file_name']}"
+        img_path = os.path.join(self.image_dir, img_name)
         img = Image.open(img_path).convert('RGB')
 
-        # Create mask
-        mask = Image.fromarray(self._create_mask(img_info, anns))
+        # Load mask
+        mask_path = os.path.join(self.mask_dir, mask_name)
+        mask = Image.open(mask_path).convert('L')  # Convert to grayscale
 
         if self.transform is not None:
             img = self.transform(img)
@@ -47,15 +49,8 @@ class COCOSegmentation:
 
         return img, mask
 
-    def _create_mask(self, img_info, anns):
-        mask = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
-        for ann in anns:
-            mask = np.maximum(mask, self.coco.annToMask(ann))
-        return mask
-
     def __len__(self):
-        return len(self.ids)
-
+        return len(self.images)
 
 # class COCOSegmentation(data.Dataset):
 #     def __init__(self, root, split='train', transform=None, target_transform=None):
