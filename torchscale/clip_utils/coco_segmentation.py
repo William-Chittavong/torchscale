@@ -8,7 +8,7 @@ from PIL import Image
 import numpy as np
 
 
-class CocoSegmentation(data.Dataset):
+class COCOSegmentation(data.Dataset):
     def __init__(self, path, transform=None, target_transform=None, split='val'):
         self.path = path
         self.transform = transform
