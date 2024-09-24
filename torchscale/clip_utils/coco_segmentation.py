@@ -49,10 +49,8 @@ class COCOSegmentation(data.Dataset):
         mask = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
 
         for ann in anns:
-            if 'segmentation' in ann:
-                rle = self.coco.annToRLE(ann)  # Convert segmentation to RLE format
-                m = mask_util.decode(rle)  # Decode RLE to binary mask
-                mask = np.maximum(mask, m)  # Combine masks
+            mask = self.coco.annToMask(ann)  # Convert segmentation to RLE format
+               
 
         mask = Image.fromarray(mask)
 
