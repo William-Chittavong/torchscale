@@ -49,14 +49,14 @@ class COCOSegmentation(data.Dataset):
         mask = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
 
         for ann in anns:
-            mask = self.coco.annToMask(ann)  # Convert segmentation to RLE format
+            mask = self.coco.annToMask(ann)  
                
 
         mask = Image.fromarray(mask)
 
         # Apply transformations
         if self.transform is not None:
-            img = self.transform(img)
+            img = torch.from_numpy(self.transform(img)).long()
 
         if self.target_transform is not None:
             mask = self.target_transform(mask)
