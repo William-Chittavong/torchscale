@@ -4,6 +4,7 @@ import torch.utils.data as data
 import numpy as np
 from PIL import Image
 from pycocotools.coco import COCO
+import pycocotools.mask as mask_util  # Import mask utilities
 import torchvision.transforms as T
 
 
@@ -50,7 +51,7 @@ class COCOSegmentation(data.Dataset):
         for ann in anns:
             if 'segmentation' in ann:
                 rle = self.coco.annToRLE(ann)  # Convert segmentation to RLE format
-                m = self.coco.decode(rle)  # Decode RLE to binary mask
+                m = mask_util.decode(rle)  # Decode RLE to binary mask
                 mask = np.maximum(mask, m)  # Combine masks
 
         mask = Image.fromarray(mask)
@@ -67,6 +68,7 @@ class COCOSegmentation(data.Dataset):
 
     def __len__(self):
         return len(self.ids)
+
 
 
 # import os
