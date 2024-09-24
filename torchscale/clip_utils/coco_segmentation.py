@@ -57,11 +57,11 @@ class COCOSegmentation(data.Dataset):
         # Apply transformations
         if self.transform is not None:
             img = self.transform(img)
-        print(img, type(img))
+        #print(img, type(img))
         if self.target_transform is not None:
             mask = self.target_transform(mask)
             mask = torch.from_numpy(np.array(mask)).long()  # Convert to tensor
-        print(mask,type(mask))
+        #print(mask,type(mask))
         return img, mask
 
     def __len__(self):
