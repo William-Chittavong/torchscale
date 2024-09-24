@@ -29,38 +29,38 @@ batch_size = 10  # Number of images to process before updating the progress bar
 
 
 
-def preprocess_image(img_info, coco, data_dir, output_dir):
-    image_path = os.path.join(data_dir, img_info['file_name'])
-    ann_ids = coco.getAnnIds(imgIds=img_info['id'], iscrowd=None)
-    if len(ann_ids) == 0:
-        return
-
-    anns = coco.loadAnns(ann_ids)
-    mask = coco.annToMask(anns[0])  # Get the first annotation's mask
-
-    # Save the preprocessed image
-    image = cv2.imread(image_path)
-    cv2.imwrite(os.path.join(output_dir, 'images', img_info['file_name']), image)
-
-    # Convert the mask to white (255) on black (0) background
-    mask = (mask * 255).astype(np.uint8)
-
-    # Save the corresponding mask
-    cv2.imwrite(os.path.join(output_dir, 'masks', img_info['file_name'].replace('.jpg', '.png')), mask)
 # def preprocess_image(img_info, coco, data_dir, output_dir):
 #     image_path = os.path.join(data_dir, img_info['file_name'])
 #     ann_ids = coco.getAnnIds(imgIds=img_info['id'], iscrowd=None)
 #     if len(ann_ids) == 0:
 #         return
 
-#     mask = coco.annToMask(coco.loadAnns(ann_ids)[0])
+#     anns = coco.loadAnns(ann_ids)
+#     mask = coco.annToMask(anns[0])  # Get the first annotation's mask
 
 #     # Save the preprocessed image
 #     image = cv2.imread(image_path)
 #     cv2.imwrite(os.path.join(output_dir, 'images', img_info['file_name']), image)
 
+#     # Convert the mask to white (255) on black (0) background
+#     mask = (mask * 255).astype(np.uint8)
+
 #     # Save the corresponding mask
 #     cv2.imwrite(os.path.join(output_dir, 'masks', img_info['file_name'].replace('.jpg', '.png')), mask)
+def preprocess_image(img_info, coco, data_dir, output_dir):
+    image_path = os.path.join(data_dir, img_info['file_name'])
+    ann_ids = coco.getAnnIds(imgIds=img_info['id'], iscrowd=None)
+    if len(ann_ids) == 0:
+        return
+
+    mask = coco.annToMask(coco.loadAnns(ann_ids)[0])
+
+    # Save the preprocessed image
+    image = cv2.imread(image_path)
+    cv2.imwrite(os.path.join(output_dir, 'images', img_info['file_name']), image)
+
+    # Save the corresponding mask
+    cv2.imwrite(os.path.join(output_dir, 'masks', img_info['file_name'].replace('.jpg', '.png')), mask)
 
 def preprocess_dataset(data_dir, annotations_file, output_dir):
     coco = COCO(annotations_file)
