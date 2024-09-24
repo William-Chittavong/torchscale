@@ -189,7 +189,7 @@ def main(args):
                                 transform=preprocess, 
                                 target_transform=target_transform)
     else:
-        ds = COCOSegmentation(root=args.data_path, split='val2017', transform = preprocess)
+        ds = COCOSegmentation(root=args.data_path, split='val2017', transform = preprocess , target_transform= target_transform)
     
 
     
