@@ -55,7 +55,7 @@ class COCOSegmentation(data.Dataset):
         mask = torch.LongTensor(np.max(np.stack([
             self.coco.annToMask(ann) * ann["category_id"]
             for ann in anns
-        ]), axis=0)).unsqueeze(0)
+        ]), axis=0))
 
 
         # Apply transformations
