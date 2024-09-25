@@ -8,6 +8,11 @@ import pycocotools.mask as mask_util  # Import mask utilities
 import torchvision.transforms as T
 
 
+
+from typing import List, Optional, Callable, Tuple
+
+    
+
 class COCOSegmentation(data.Dataset):
     CLASSES = 2  # Example, change according to the number of classes in the dataset
 
@@ -29,7 +34,7 @@ class COCOSegmentation(data.Dataset):
         self.coco = COCO(ann_file)  # Initialize COCO object with the annotation file
         self.ids = list(self.coco.imgs.keys())  # List of image IDs in the COCO dataset
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> Tuple[torch.Tensor, torch.LongTensor]:
         """
         Args:
             index (int): Index of the item.
@@ -46,13 +51,12 @@ class COCOSegmentation(data.Dataset):
         # Load and create the segmentation mask
         ann_ids = self.coco.getAnnIds(imgIds=img_id)
         anns = self.coco.loadAnns(ann_ids)
-        mask = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
+        
+        mask = torch.LongTensor(np.max(np.stack([
+            self.coco.annToMask(ann) * ann["category_id"]
+            for ann in anns
+        ]), axis=0)).unsqueeze(0)
 
-        for ann in anns:
-            mask = self.coco.annToMask(ann)  
-               
-
-        mask = Image.fromarray(mask)
 
         # Apply transformations
         if self.transform is not None:
@@ -60,7 +64,6 @@ class COCOSegmentation(data.Dataset):
         #print(img, type(img))
         if self.target_transform is not None:
             mask = self.target_transform(mask)
-            mask = torch.from_numpy(np.array(mask)).long()  # Convert to tensor
         #print(mask,type(mask))
         return img, mask
 
