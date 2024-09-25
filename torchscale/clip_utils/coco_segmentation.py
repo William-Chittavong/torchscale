@@ -48,7 +48,7 @@ class COCOSegmentation(Dataset):
     def __len__(self) -> int:
         return len(self.files)
 
-    def __getitem__(self, i: int) -> Tuple[torch.Tensor, torch.LongTensor]:
+    def __getitem__(self, i: int):
         img = read_image(self.files[i])
         if img.shape[0] == 1:
             img = torch.cat([img]*3)
