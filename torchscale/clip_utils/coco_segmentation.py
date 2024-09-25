@@ -43,7 +43,7 @@ class COCOSegmentation(Dataset):
         self.img_ids = self.coco.getImgIds()
 
         self.img_data = self.coco.loadImgs(self.img_ids)
-        self.files = [str(self.root / f"{split}2017" / img["file_name"]) for img in self.img_data]
+        self.files = [str(self.root / f"{split}" / img["file_name"]) for img in self.img_data]
 
     def __len__(self) -> int:
         return len(self.files)
