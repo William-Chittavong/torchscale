@@ -11,64 +11,124 @@ import torchvision.transforms as T
 
 from typing import List, Optional, Callable, Tuple
 
-    
+from pycocotools.coco import COCO
+from torch.utils.data import Dataset
+import torch
+import numpy as np
+from pathlib import Path
+from typing import List, Optional, Callable, Tuple
+from torchvision.io import read_image
 
-class COCOSegmentation(data.Dataset):
-    CLASSES = 2  # Example, change according to the number of classes in the dataset
-
-    def __init__(self, root, split='val2017', transform=None, target_transform=None):
-        """
-        Args:
-            root (str): Root directory where the COCO dataset is stored.
-            split (str): The dataset split to use (e.g., 'train2017', 'val2017').
-            transform (callable, optional): A function/transform to apply to the images.
-            target_transform (callable, optional): A function/transform to apply to the segmentation masks.
-        """
-        self.root = root
+class COCOSegmentation(Dataset):
+    def __init__(
+        self,
+        root: str,
+        split: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None
+    ) -> None:
+        super().__init__()
+        self.root = Path(root)
         self.split = split
         self.transform = transform
         self.target_transform = target_transform
 
-        # Construct the path to the annotation file based on the root and split
-        ann_file = os.path.join(root, 'annotations', f'instances_{split}.json')
-        self.coco = COCO(ann_file)  # Initialize COCO object with the annotation file
-        self.ids = list(self.coco.imgs.keys())  # List of image IDs in the COCO dataset
+        ann_file = self.root / f"annotations/instances_{split}2017.json"
+        self.coco = COCO(ann_file)
 
-    def __getitem__(self, index) -> Tuple[torch.Tensor, torch.LongTensor]:
-        """
-        Args:
-            index (int): Index of the item.
-        Returns:
-            tuple: (image, target), where target is the segmentation mask.
-        """
-        # Get image info and load the image
-        img_id = self.ids[index]
-        img_info = self.coco.loadImgs(img_id)[0]
-        path = img_info['file_name']
-        img_path = os.path.join(self.root, self.split, path)
-        img = Image.open(img_path).convert('RGB')
+        # Get all category IDs
+        self.cat_ids = self.coco.getCatIds()
 
-        # Load and create the segmentation mask
-        ann_ids = self.coco.getAnnIds(imgIds=img_id)
+        # Get all image IDs
+        self.img_ids = self.coco.getImgIds()
+
+        self.img_data = self.coco.loadImgs(self.img_ids)
+        self.files = [str(self.root / f"{split}2017" / img["file_name"]) for img in self.img_data]
+
+    def __len__(self) -> int:
+        return len(self.files)
+
+    def __getitem__(self, i: int) -> Tuple[torch.Tensor, torch.LongTensor]:
+        img = read_image(self.files[i])
+        if img.shape[0] == 1:
+            img = torch.cat([img]*3)
+
+        ann_ids = self.coco.getAnnIds(
+            imgIds=self.img_data[i]['id'],
+            catIds=self.cat_ids,
+            iscrowd=None
+        )
         anns = self.coco.loadAnns(ann_ids)
-        
         mask = torch.LongTensor(np.max(np.stack([
             self.coco.annToMask(ann) * ann["category_id"]
             for ann in anns
-        ])))
+        ]), axis=0)).unsqueeze(0)
 
-
-        # Apply transformations
         if self.transform is not None:
             img = self.transform(img)
-        #print(img, type(img))
+        
         if self.target_transform is not None:
             mask = self.target_transform(mask)
-        #print(mask,type(mask))
-        return img, mask
 
-    def __len__(self):
-        return len(self.ids)
+        return img, mask
+    
+
+# class COCOSegmentation(data.Dataset):
+#     CLASSES = 2  # Example, change according to the number of classes in the dataset
+
+#     def __init__(self, root, split='val2017', transform=None, target_transform=None):
+#         """
+#         Args:
+#             root (str): Root directory where the COCO dataset is stored.
+#             split (str): The dataset split to use (e.g., 'train2017', 'val2017').
+#             transform (callable, optional): A function/transform to apply to the images.
+#             target_transform (callable, optional): A function/transform to apply to the segmentation masks.
+#         """
+#         self.root = root
+#         self.split = split
+#         self.transform = transform
+#         self.target_transform = target_transform
+
+#         # Construct the path to the annotation file based on the root and split
+#         ann_file = os.path.join(root, 'annotations', f'instances_{split}.json')
+#         self.coco = COCO(ann_file)  # Initialize COCO object with the annotation file
+#         self.ids = list(self.coco.imgs.keys())  # List of image IDs in the COCO dataset
+
+#     def __getitem__(self, index) -> Tuple[torch.Tensor, torch.LongTensor]:
+#         """
+#         Args:
+#             index (int): Index of the item.
+#         Returns:
+#             tuple: (image, target), where target is the segmentation mask.
+#         """
+#         # Get image info and load the image
+#         img_id = self.ids[index]
+#         img_info = self.coco.loadImgs(img_id)[0]
+#         path = img_info['file_name']
+#         img_path = os.path.join(self.root, self.split, path)
+#         img = Image.open(img_path).convert('RGB')
+
+#         # Load and create the segmentation mask
+#         ann_ids = self.coco.getAnnIds(imgIds=img_id)
+#         anns = self.coco.loadAnns(ann_ids)
+        
+#         mask = torch.LongTensor(np.max(np.stack([
+#             self.coco.annToMask(ann) * ann["category_id"]
+#             for ann in anns
+#         ])))
+
+
+#         # Apply transformations
+#         if self.transform is not None:
+#             img = self.transform(img)
+#         #print(img, type(img))
+#         if self.target_transform is not None:
+#             mask = self.target_transform(mask)
+#         #print(mask,type(mask))
+#         return img, mask
+
+#     def __len__(self):
+#         return len(self.ids)
 
 
 
