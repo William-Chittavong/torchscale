@@ -13,6 +13,7 @@ from pathlib import Path
 import tqdm
 
 from torchscale.clip_utils.imagenet_segmentation import ImagenetSegmentation
+from torchscale.clip_utils.coco_segmentation import COCOSegmentation
 from torchscale.clip_utils.segmentation_utils import (batch_pix_accuracy, batch_intersection_union, 
                                       get_ap_scores, Saver)
 from sklearn.metrics import precision_recall_curve
@@ -245,9 +246,13 @@ def main(args):
         args.image_size,
         is_train=False,
     )
-    ds = ImagenetSegmentation(args.data_path,
-                            transform=preprocess, 
-                            target_transform=target_transform)
+    if "imagenet" in args.classifier_dataset:
+        ds = ImagenetSegmentation(args.data_path,
+                                transform=preprocess, 
+                                target_transform=target_transform)
+    else:
+        ds = COCOSegmentation(root=args.data_path, split='val2017', transform = preprocess , target_transform= target_transform)
+    
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, drop_last=False)
     iterator = tqdm.tqdm(dl)
     # Saver
