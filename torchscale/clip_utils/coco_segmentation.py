@@ -33,7 +33,7 @@ class COCOSegmentation(Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
-        ann_file = self.root / f"annotations/instances_{split}2017.json"
+        ann_file = self.root / f"annotations/instances_{split}.json"
         self.coco = COCO(ann_file)
 
         # Get all category IDs
