@@ -227,8 +227,14 @@ def main(args):
         iterator.set_description('pixAcc: %.4f, mIoU: %.4f, mAP: %.4f' % (pixAcc, mIoU, mAp))
 
     predictions = np.concatenate(predictions)
+    print("predictions \n" , predictions)
     targets = np.concatenate(targets)
+    
+    print("targets \n" , targets)
+    
     pr, rc, thr = precision_recall_curve(targets, predictions)
+    print("pr result \n",pr)
+    print("rc result \n ", rc)
     np.save(os.path.join(saver.experiment_dir, 'precision.npy'), pr)
     np.save(os.path.join(saver.experiment_dir, 'recall.npy'), rc)
 
