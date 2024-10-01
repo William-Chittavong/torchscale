@@ -58,17 +58,18 @@ class COCOSegmentation(data.Dataset):
         img = Image.open(img_path).convert('RGB')
 
         # Load and create the segmentation mask
-        ann_ids = self.coco.getAnnIds(imgIds=img_id,catIds=cat_ids, iscrowd=None)
+        ann_ids = self.coco.getAnnIds(imgIds=img['id'],catIds=cat_ids, iscrowd=None)
         anns = self.coco.loadAnns(ann_ids)
         
         
-        mask = self.coco.annToMask(anns[0])
-        
+     
+       
 
       
 
-        for i in range(len(anns)):
-            mask += self.coco.annToMask(anns[i])
+        mask = np.zeros_like(img)
+        for i, ann in enumerate(annIds):
+            mask += coco.annToMask(ann) * i 
 
         mask = Image.fromarray(mask)
 
