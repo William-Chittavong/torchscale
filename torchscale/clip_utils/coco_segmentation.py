@@ -57,7 +57,7 @@ class COCOSegmentation(data.Dataset):
         # Load and create the segmentation mask
         ann_ids = self.coco.getAnnIds(imgIds=img_id)
         anns = self.coco.loadAnns(ann_ids)
-        mask = self.coco.annToMask(anns[0])>0
+        mask = np.zeros((img['height'],img['width']))
         
 
       
