@@ -67,9 +67,9 @@ class COCOSegmentation(data.Dataset):
 
       
 
-        mask = np.zeros_like(img)
-        for i, ann in enumerate(ann_ids):
-            mask += self.coco.annToMask(ann) * i 
+        mask = self.coco.annToMask(anns[0])
+        for i in range(len(anns)):
+            mask += self.coco.annToMask(anns[i])
 
         mask = Image.fromarray(mask)
 
