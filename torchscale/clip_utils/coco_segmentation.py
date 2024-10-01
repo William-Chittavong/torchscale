@@ -65,7 +65,7 @@ class COCOSegmentation(data.Dataset):
         for i in range(len(anns)):
             mask += self.coco.annToMask(anns[i])>0
 
-        #mask = Image.fromarray(mask)
+        mask = Image.fromarray(mask)
 
         # Apply transformations
         if self.transform is not None:
