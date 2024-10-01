@@ -50,13 +50,18 @@ class COCOSegmentation(data.Dataset):
         # Get image info and load the image
         img_id = self.ids[index]
         img_info = self.coco.loadImgs(img_id)[0]
+        
+        cat_ids = self.coco.getCatIds()
+        
         path = img_info['file_name']
         img_path = os.path.join(self.root, self.split, path)
         img = Image.open(img_path).convert('RGB')
 
         # Load and create the segmentation mask
-        ann_ids = self.coco.getAnnIds(imgIds=img_id)
+        ann_ids = self.coco.getAnnIds(imgIds=img["id"],catIds=cat_ids,iscrowd=None)
         anns = self.coco.loadAnns(ann_ids)
+        
+        
         mask = self.coco.annToMask(anns[0])
         
 
