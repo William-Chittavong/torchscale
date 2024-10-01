@@ -63,7 +63,7 @@ class COCOSegmentation(data.Dataset):
       
 
         for i in range(len(anns)):
-            mask += self.coco.annToMask(anns[i])>0
+            mask += self.coco.annToMask(anns[i])
 
         mask = Image.fromarray(mask)
 
