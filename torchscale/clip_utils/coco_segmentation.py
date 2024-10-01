@@ -14,7 +14,7 @@ from typing import List, Optional, Callable, Tuple
     
 
 class COCOSegmentation(data.Dataset):
-    CLASSES = 2  # Example, change according to the number of classes in the dataset
+
 
     def __init__(self, root, split='val2017', transform=None, target_transform=None):
         """
@@ -56,7 +56,7 @@ class COCOSegmentation(data.Dataset):
         path = img_info['file_name']
         img_path = os.path.join(self.root, self.split, path)
         img = Image.open(img_path).convert('RGB')
-
+        image = self.coco.imgs[index]
         # Load and create the segmentation mask
         ann_ids = self.coco.getAnnIds(imgIds=img['id'],catIds=cat_ids, iscrowd=None)
         anns = self.coco.loadAnns(ann_ids)
@@ -68,8 +68,8 @@ class COCOSegmentation(data.Dataset):
       
 
         mask = np.zeros_like(img)
-        for i, ann in enumerate(annIds):
-            mask += coco.annToMask(ann) * i 
+        for i, ann in enumerate(ann_ids):
+            mask += self.coco.annToMask(ann) * i 
 
         mask = Image.fromarray(mask)
 
