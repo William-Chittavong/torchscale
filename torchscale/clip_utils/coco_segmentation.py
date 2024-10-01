@@ -33,6 +33,9 @@ class COCOSegmentation(data.Dataset):
         ann_file = os.path.join(root, 'annotations', f'instances_{split}.json')
         self.coco = COCO(ann_file)  # Initialize COCO object with the annotation file
         self.ids = list(self.coco.imgs.keys())  # List of image IDs in the COCO dataset
+        
+        
+        
 
     def __getitem__(self, index) -> Tuple[torch.Tensor, torch.LongTensor]:
         """
@@ -41,6 +44,9 @@ class COCOSegmentation(data.Dataset):
         Returns:
             tuple: (image, target), where target is the segmentation mask.
         """
+        
+        
+        
         # Get image info and load the image
         img_id = self.ids[index]
         img_info = self.coco.loadImgs(img_id)[0]
@@ -51,14 +57,13 @@ class COCOSegmentation(data.Dataset):
         # Load and create the segmentation mask
         ann_ids = self.coco.getAnnIds(imgIds=img_id)
         anns = self.coco.loadAnns(ann_ids)
-        mask = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
+        mask = self.coco.annToMask(anns[0])>0
+        
 
       
 
         for ann in anns:
-            ann_mask = self.coco.annToMask(ann)
-            mask = np.maximum(mask, ann_mask)  # Combine masks using maximum operation
-               
+            mask += self.coco.annToMask(anns[ann])>0
 
         mask = Image.fromarray(mask)
 
