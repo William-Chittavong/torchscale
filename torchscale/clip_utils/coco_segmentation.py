@@ -94,6 +94,9 @@ class COCOSegmentation:
 
         if self.target_transform is not None:
             mask = self.target_transform(mask)
+        
+        # Convert mask to tensor and then to long type
+        mask = torch.from_numpy(np.array(mask)).long()
 
         return img, mask
 
