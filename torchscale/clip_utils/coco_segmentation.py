@@ -85,9 +85,17 @@ class COCOSegmentation:
         # Create binary mask
     
         
-        mask = 0
-        for i in range(len(anns)):
-            mask += coco.annToMask(anns[i])>0
+        # Create binary mask
+        if len(anns) == 0:
+            # If there are no annotations, create an empty mask (zeros)
+            mask = np.zeros((img.size[1], img.size[0]), dtype=np.uint8)  # Height, Width
+        else:
+            mask = coco.annToMask(anns[0]) > 0  # Get the first mask
+            
+            # Combine masks for all annotations
+            for i in range(1, len(anns)):
+                mask |= coco.annToMask(anns[i]) > 0  # Use bitwise OR to combine masks
+
         # Convert mask to PIL Image
         mask = Image.fromarray(mask)
 
