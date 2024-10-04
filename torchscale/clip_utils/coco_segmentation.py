@@ -85,10 +85,9 @@ class COCOSegmentation:
         # Create binary mask
     
         
-        mask = np.zeros(img.size[::-1], dtype=np.uint8)
-        for ann in anns:
-            mask += np.maximum(mask,coco.annToMask(ann)*ann['category_id'])
-
+        mask = coco.annToMask(anns[0])>0
+        for i in range(len(anns)):
+            mask += coco.annToMask(anns[i])>0
         # Convert mask to PIL Image
         mask = Image.fromarray(mask)
 
