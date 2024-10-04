@@ -9,8 +9,8 @@ from PIL import Image
 import torchvision.transforms as transforms
 
 class COCOSegmentation(data.Dataset):
-    def __init__(self, root, annFile, transform=None, target_transform=None):
-        self.root = root
+    def __init__(self, split, annFile, transform=None, target_transform=None):
+        self.root = split
         self.coco = COCO(annFile)
         self.transform = transform
         self.target_transform = target_transform
