@@ -57,9 +57,7 @@
 #         return len(self.coco.cats)
 
 import numpy as np
-import cv2
 from pycocotools.coco import COCO
-from pycocotools import mask as coco_mask
 from PIL import Image
 import torch
 
@@ -76,33 +74,45 @@ class COCOSegmentation:
         coco = self.coco
         img_id = self.ids[index]
         ann_ids = coco.getAnnIds(imgIds=img_id)
-        anns = coco.loadAnns(ann_ids)
+
+        # Handle case where no annotations are present
+        if len(ann_ids) == 0:
+            # Return an empty mask (all zeros)
+            mask = np.zeros((coco.imgs[img_id]['height'], coco.imgs[img_id]['width']), dtype=np.uint8)
+        else:
+            # Load all annotations for this image
+            anns = coco.loadAnns(ann_ids)
+
+            # Create binary mask for the first annotation
+            mask = coco.annToMask(anns[0])
+
+            # Combine all the masks (ensuring binary values 0 or 1)
+            for ann in anns[1:]:
+                if 'segmentation' in ann:
+                    mask = np.maximum(mask, coco.annToMask(ann))
+
+        # Ensure mask is binary (0 or 1)
+        mask = np.clip(mask, 0, 1)
 
         # Load image
         path = coco.loadImgs(img_id)[0]['file_name']
         img = Image.open(f'{self.root}/{path}').convert('RGB')
-        
-        # Create binary mask
-        mask = coco.annToMask(anns[0])
-        
-        for i,ann in enumerate(anns):
-            if 'segmentation' in ann:
-                mask += coco.annToMask(anns[i])
 
-        # Convert mask to PIL Image
-        mask = Image.fromarray(mask)
-
+        # Apply transformations
         if self.transform is not None:
             img = self.transform(img)
 
         if self.target_transform is not None:
-            mask = self.target_transform(mask)
+            mask = self.target_transform(Image.fromarray(mask))
+
+        # Convert mask to tensor
         mask = torch.from_numpy(np.array(mask)).long()
 
         return img, mask
 
     def __len__(self):
         return len(self.ids)
+
 # import os
 # import torch
 # import torch.utils.data as data
