@@ -1,92 +1,60 @@
+
+
 import os
 import torch
 import torch.utils.data as data
 import numpy as np
-from PIL import Image
 from pycocotools.coco import COCO
-import pycocotools.mask as mask_util  # Import mask utilities
-import torchvision.transforms as T
-
-
-
-from typing import List, Optional, Callable, Tuple
-
-    
+from PIL import Image
+import torchvision.transforms as transforms
 
 class COCOSegmentation(data.Dataset):
-
-
-    def __init__(self, root, split='val2017', transform=None, target_transform=None):
-        """
-        Args:
-            root (str): Root directory where the COCO dataset is stored.
-            split (str): The dataset split to use (e.g., 'train2017', 'val2017').
-            transform (callable, optional): A function/transform to apply to the images.
-            target_transform (callable, optional): A function/transform to apply to the segmentation masks.
-        """
+    def __init__(self, root, annFile, transform=None, target_transform=None):
         self.root = root
-        self.split = split
+        self.coco = COCO(annFile)
         self.transform = transform
         self.target_transform = target_transform
+        self.ids = list(self.coco.imgs.keys())
 
-        # Construct the path to the annotation file based on the root and split
-        ann_file = os.path.join(root, 'annotations', f'instances_{split}.json')
-        self.coco = COCO(ann_file)  # Initialize COCO object with the annotation file
-        self.ids = list(self.coco.imgs.keys())  # List of image IDs in the COCO dataset
-        
-        
-        
-
-    def __getitem__(self, index) -> Tuple[torch.Tensor, torch.LongTensor]:
-        """
-        Args:
-            index (int): Index of the item.
-        Returns:
-            tuple: (image, target), where target is the segmentation mask.
-        """
-        
-        
-        
-        # Get image info and load the image
+    def __getitem__(self, index):
+        coco = self.coco
         img_id = self.ids[index]
-        img_info = self.coco.loadImgs(img_id)[0]
+        ann_ids = coco.getAnnIds(imgIds=img_id)
+        anns = coco.loadAnns(ann_ids)
         
-        cat_ids = self.coco.getCatIds()
-        
-        path = img_info['file_name']
-        img_path = os.path.join(self.root, self.split, path)
-        img = Image.open(img_path).convert('RGB')
-        image = self.coco.imgs[img_id]
-        # Load and create the segmentation mask
-        ann_ids = self.coco.getAnnIds(imgIds=image['id'],catIds=cat_ids, iscrowd=None)
-        anns = self.coco.loadAnns(ann_ids)
-        
-        
-     
-       
+        # Load image
+        img_info = coco.loadImgs(img_id)[0]
+        path = os.path.join(self.root, img_info['file_name'])
+        img = Image.open(path).convert('RGB')
 
-      
+        # Create empty mask
+        mask = np.zeros((img_info['height'], img_info['width']))
 
-        mask = self.coco.annToMask(anns[0])
-        for i in range(len(anns)):
-            mask += self.coco.annToMask(anns[i])
+        # Fill mask with instance segmentations
+        for ann in anns:
+            pixel_value = ann['category_id']
+            mask = np.maximum(coco.annToMask(ann) * pixel_value, mask)
 
-        mask = Image.fromarray(mask)
+        # Convert mask to PIL Image
+        mask = Image.fromarray(mask.astype(np.uint8))
 
-        # Apply transformations
         if self.transform is not None:
             img = self.transform(img)
-        #print(img, type(img))
+
         if self.target_transform is not None:
             mask = self.target_transform(mask)
-            mask = torch.from_numpy(np.array(mask)).long()  # Convert to tensor
-        #print(mask,type(mask))
+        else:
+            mask = transforms.ToTensor()(mask)
+            mask = mask.long()
+
         return img, mask
 
     def __len__(self):
         return len(self.ids)
 
-
+    @property
+    def classes(self):
+        return len(self.coco.cats)
 
 # import os
 # import torch
