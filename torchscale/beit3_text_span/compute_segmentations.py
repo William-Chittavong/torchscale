@@ -149,7 +149,7 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     batch_label += labeled
     batch_inter += inter
     batch_union += union
-    ap = np.nan_to_num(get_ap_binary(output_AP, labels))
+    ap = np.nan_to_num(get_ap_scores(output_AP, labels))
     batch_ap += ap
     
     return batch_correct, batch_label, batch_inter, batch_union, batch_ap, pred, target
