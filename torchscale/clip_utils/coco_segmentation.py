@@ -56,11 +56,12 @@
 #     def classes(self):
 #         return len(self.coco.cats)
 
+import numpy as np
+import cv2
 from pycocotools.coco import COCO
 from pycocotools import mask as coco_mask
-import numpy as np
-import torch
 from PIL import Image
+import torch
 
 class COCOSegmentation:
     def __init__(self, root, split='val2017', transform=None, target_transform=None):
@@ -80,11 +81,14 @@ class COCOSegmentation:
         # Load image
         path = coco.loadImgs(img_id)[0]['file_name']
         img = Image.open(f'{self.root}/{path}').convert('RGB')
-
+        
         # Create binary mask
         mask = np.zeros(img.size[::-1], dtype=np.uint8)
+        
         for ann in anns:
-            mask = np.maximum(mask, coco.annToMask(ann))
+            if 'segmentation' in ann:
+                binary_mask = self.coco.annToMask(ann)  # Create a binary mask from segmentation
+                mask = np.maximum(mask, binary_mask)  # Combine with previous masks (ensures binary)
 
         # Convert mask to PIL Image
         mask = Image.fromarray(mask)
@@ -94,8 +98,6 @@ class COCOSegmentation:
 
         if self.target_transform is not None:
             mask = self.target_transform(mask)
-        
-        # Convert mask to tensor and then to long type
         mask = torch.from_numpy(np.array(mask)).long()
 
         return img, mask
