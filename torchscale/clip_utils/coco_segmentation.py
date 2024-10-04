@@ -83,12 +83,11 @@ class COCOSegmentation:
         img = Image.open(f'{self.root}/{path}').convert('RGB')
         
         # Create binary mask
-        mask = np.zeros(img.size[::-1], dtype=np.uint8)
+        mask = coco.annToMask(anns[0])
         
-        for ann in anns:
+        for i,ann in enumerate(anns):
             if 'segmentation' in ann:
-                binary_mask = self.coco.annToMask(ann)  # Create a binary mask from segmentation
-                mask = np.maximum(mask, binary_mask)  # Combine with previous masks (ensures binary)
+                mask += coco.annToMask(anns[i])
 
         # Convert mask to PIL Image
         mask = Image.fromarray(mask)
