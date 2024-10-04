@@ -85,6 +85,9 @@ class COCOSegmentation(torch.utils.data.Dataset):
         img_path = os.path.join(self.root, self.split, img_info['file_name'])
         
         img = Image.open(img_path).convert('RGB')
+        
+          # Create empty mask
+        mask = np.zeros((img_info['height'], img_info['width']))
 
         # Create a binary mask
         
