@@ -114,6 +114,17 @@ def get_ap_multiclass(predict, target):
 
     return total
 
+def get_ap_binary(predict, target):
+    total = []
+    for pred, tgt in zip(predict, target):
+        pred_flat = pred[1].reshape(-1).data.cpu().numpy()  # Use the foreground channel
+        tgt_flat = tgt.reshape(-1).data.cpu().numpy()
+        
+        ap = average_precision_score(tgt_flat, pred_flat)
+        total.append(np.nan_to_num(ap))
+
+    return total
+
 
 def batch_precision_recall(predict, target, thr=0.5):
     """Batch Precision Recall
