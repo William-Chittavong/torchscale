@@ -85,7 +85,7 @@ class COCOSegmentation:
         # Create binary mask
     
         
-        mask = coco.annToMask(anns[0])>0
+        mask = 0
         for i in range(len(anns)):
             mask += coco.annToMask(anns[i])>0
         # Convert mask to PIL Image
