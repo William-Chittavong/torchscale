@@ -114,7 +114,13 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     target = labels.view(-1).data.cpu().numpy()
 
     output = torch.cat((Res_0, Res_1), 1)
-    output_AP = torch.cat((Res_0_AP, Res_1_AP), 1)
+    #output_AP = torch.cat((Res_0_AP, Res_1_AP), 1)
+    output_AP = torch.sigmoid(output)
+    
+    print(f"output_AP shape: {output_AP.shape}")
+    print(f"labels shape: {labels.shape}")
+    print(f"output_AP min: {output_AP.min()}, output_AP max: {output_AP.max()}")
+    print(f"labels min: {labels.min()}, labels max: {labels.max()}")
 
     if args.save_img:
         # Save predicted mask

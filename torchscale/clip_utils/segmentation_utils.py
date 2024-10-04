@@ -83,23 +83,41 @@ def get_pr(predict, target, ignore_index=-1):
     return total
 
 
-def get_ap_scores(predict, target, ignore_index=-1):
+# def get_ap_scores(predict, target, ignore_index=-1):
+#     total = []
+#     for pred, tgt in zip(predict, target):
+#         target_expand = tgt.unsqueeze(0).expand_as(pred)
+#         target_expand_numpy = target_expand.data.cpu().numpy().reshape(-1)
+
+#         # Tensor process
+#         x = torch.zeros_like(target_expand)
+#         t = tgt.unsqueeze(0).clamp(min=0).long()
+#         target_1hot = x.scatter_(0, t, 1)
+#         predict_flat = pred.data.cpu().numpy().reshape(-1)
+#         target_flat = target_1hot.data.cpu().numpy().reshape(-1)
+
+#         p = predict_flat[target_expand_numpy != ignore_index]
+#         t = target_flat[target_expand_numpy != ignore_index]
+
+#         total.append(np.nan_to_num(average_precision_score(t, p)))
+
+#     return total
+
+def get_ap_scores(predict, target):
     total = []
     for pred, tgt in zip(predict, target):
-        target_expand = tgt.unsqueeze(0).expand_as(pred)
-        target_expand_numpy = target_expand.data.cpu().numpy().reshape(-1)
-
-        # Tensor process
-        x = torch.zeros_like(target_expand)
-        t = tgt.unsqueeze(0).clamp(min=0).long()
-        target_1hot = x.scatter_(0, t, 1)
-        predict_flat = pred.data.cpu().numpy().reshape(-1)
-        target_flat = target_1hot.data.cpu().numpy().reshape(-1)
-
-        p = predict_flat[target_expand_numpy != ignore_index]
-        t = target_flat[target_expand_numpy != ignore_index]
-
-        total.append(np.nan_to_num(average_precision_score(t, p)))
+        try:
+            predict_flat = pred.data.cpu().numpy().reshape(-1)
+            target_flat = tgt.data.cpu().numpy().reshape(-1)
+            
+            total.append(np.nan_to_num(average_precision_score(target_flat, predict_flat)))
+        except Exception as e:
+            print(f"Error in get_ap_scores: {e}")
+            print(f"Predict shape: {pred.shape}, Target shape: {tgt.shape}")
+            print(f"Predict dtype: {pred.dtype}, Target dtype: {tgt.dtype}")
+            print(f"Predict min: {pred.min()}, Predict max: {pred.max()}")
+            print(f"Target min: {tgt.min()}, Target max: {tgt.max()}")
+            raise
 
     return total
 
