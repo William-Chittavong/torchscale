@@ -77,7 +77,8 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     representation, _ = model(image=image.to(args.device), normalize = False ,only_infer = True)
     attentions, _ = prs.finalize(representation)
     
-    attentions = attentions.detach().cpu() # [b, l, n, h, d]
+    attentions = attentions.detach().cpu() # [b, l,# Convert mask to tensor and then to long type
+#         mask = torch.from_numpy(np.array(mask)).long() n, h, d]
     chosen_class = (representation.detach().cpu().numpy() @ classifier).argmax(axis=1)
     patches = args.image_size // model.args.patch_size
     attentions_collapse = attentions[:, :, 1:].sum(axis=(1,3))
@@ -117,10 +118,10 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     #output_AP = torch.cat((Res_0_AP, Res_1_AP), 1)
     output_AP = torch.sigmoid(output)
     
-    print(f"output_AP shape: {output_AP.shape}")
-    print(f"labels shape: {labels.shape}")
-    print(f"output_AP min: {output_AP.min()}, output_AP max: {output_AP.max()}")
-    print(f"labels min: {labels.min()}, labels max: {labels.max()}")
+    # print(f"output_AP shape: {output_AP.shape}")
+    # print(f"labels shape: {labels.shape}")
+    # print(f"output_AP min: {output_AP.min()}, output_AP max: {output_AP.max()}")
+    # print(f"labels min: {labels.min()}, labels max: {labels.max()}")
 
     if args.save_img:
         # Save predicted mask
