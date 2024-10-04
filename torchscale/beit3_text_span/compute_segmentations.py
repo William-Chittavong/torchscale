@@ -115,8 +115,8 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     target = labels.view(-1).data.cpu().numpy()
 
     output = torch.cat((Res_0, Res_1), 1)
-    #output_AP = torch.cat((Res_0_AP, Res_1_AP), 1)
-    output_AP = torch.sigmoid(output)
+    output_AP = torch.cat((Res_0_AP, Res_1_AP), 1)
+   
     
     # print(f"output_AP shape: {output_AP.shape}")
     # print(f"labels shape: {labels.shape}")
