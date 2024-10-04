@@ -62,7 +62,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-class COCOSegmentationBinary:
+class COCOSegmentation:
     def __init__(self, root, split='val2017', transform=None, target_transform=None):
         ann_file = f'{root}/annotations/instances_{split}.json'
         self.root = f'{root}/{split}'
