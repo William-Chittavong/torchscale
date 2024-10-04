@@ -15,7 +15,7 @@ import tqdm
 from torchscale.clip_utils.imagenet_segmentation import ImagenetSegmentation
 from torchscale.clip_utils.coco_segmentation import COCOSegmentation
 from torchscale.clip_utils.segmentation_utils import (batch_pix_accuracy, batch_intersection_union, 
-                                      get_ap_scores, Saver)
+                                      get_ap_scores,get_ap_multiclass, Saver)
 from sklearn.metrics import precision_recall_curve
 from torchscale.component.prs_hook import hook_prs_logger
 
@@ -148,7 +148,7 @@ def eval_batch(model, prs, image, labels, index, args, classifier, saver):
     batch_label += labeled
     batch_inter += inter
     batch_union += union
-    ap = np.nan_to_num(get_ap_scores(output_AP, labels))
+    ap = np.nan_to_num(get_ap_multiclass(output_AP, labels))
     batch_ap += ap
     
     return batch_correct, batch_label, batch_inter, batch_union, batch_ap, pred, target
