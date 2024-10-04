@@ -56,23 +56,20 @@
 #     def classes(self):
 #         return len(self.coco.cats)
 
-import os
-import torch
-import numpy as np
-from PIL import Image
 from pycocotools.coco import COCO
 from pycocotools import mask as coco_mask
+import numpy as np
+import torch
+from PIL import Image
 
-class COCOSegmentation(torch.utils.data.Dataset):
+class COCOSegmentationBinary:
     def __init__(self, root, split='val2017', transform=None, target_transform=None):
-        self.root = root
-        self.split = split
+        ann_file = f'{root}/annotations/instances_{split}.json'
+        self.root = f'{root}/{split}'
+        self.coco = COCO(ann_file)
+        self.ids = list(sorted(self.coco.imgs.keys()))
         self.transform = transform
         self.target_transform = target_transform
-        
-        ann_file = os.path.join(root, 'annotations', f'instances_{split}.json')
-        self.coco = COCO(ann_file)
-        self.ids = list(self.coco.imgs.keys())
 
     def __getitem__(self, index):
         coco = self.coco
@@ -80,21 +77,14 @@ class COCOSegmentation(torch.utils.data.Dataset):
         ann_ids = coco.getAnnIds(imgIds=img_id)
         anns = coco.loadAnns(ann_ids)
 
-        img_info = coco.loadImgs(img_id)[0]
-        
-        img_path = os.path.join(self.root, self.split, img_info['file_name'])
-        
-        img = Image.open(img_path).convert('RGB')
-        
-          # Create empty mask
-        mask = np.zeros((img_info['height'], img_info['width']))
+        # Load image
+        path = coco.loadImgs(img_id)[0]['file_name']
+        img = Image.open(f'{self.root}/{path}').convert('RGB')
 
-        # Create a binary mask
-        
-        # Fill mask with instance segmentations
+        # Create binary mask
+        mask = np.zeros(img.size[::-1], dtype=np.uint8)
         for ann in anns:
-            pixel_value = ann['category_id']
-            mask = np.maximum(coco.annToMask(ann) * pixel_value, mask)
+            mask = np.maximum(mask, coco.annToMask(ann))
 
         # Convert mask to PIL Image
         mask = Image.fromarray(mask)
@@ -104,9 +94,6 @@ class COCOSegmentation(torch.utils.data.Dataset):
 
         if self.target_transform is not None:
             mask = self.target_transform(mask)
-
-        # Convert mask to tensor
-        mask = torch.from_numpy(np.array(mask)).long()
 
         return img, mask
 
