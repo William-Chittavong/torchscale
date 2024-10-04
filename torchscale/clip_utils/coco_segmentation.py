@@ -83,13 +83,14 @@ class COCOSegmentation:
         img = Image.open(f'{self.root}/{path}').convert('RGB')
         
         # Create binary mask
-
+    
         
         mask = coco.annToMask(anns[0])
         for i in range(len(anns)):
             mask += coco.annToMask(anns[i])
 
-   
+        # Convert mask to PIL Image
+        mask = Image.fromarray(mask)
 
         if self.transform is not None:
             img = self.transform(img)
